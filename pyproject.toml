@@ -1,17 +1,63 @@
 [project]
 name = "fal-mcp-server"
 version = "0.1.0"
-description = "MCP server for Fal.ai media generation"
+description = "MCP server for Fal.ai - Generate images, videos, music and audio with AI models"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+keywords = ["mcp", "fal", "ai", "image-generation", "claude", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
-    "mcp>=0.1.0",
+    "mcp>=1.0.0",
     "fal-client>=0.4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/fal-mcp-server"
+Documentation = "https://github.com/yourusername/fal-mcp-server#readme"
+Repository = "https://github.com/yourusername/fal-mcp-server"
+Issues = "https://github.com/yourusername/fal-mcp-server/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+fal-mcp = "fal_mcp_server.server:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[project.scripts]
-fal-mcp = "fal_mcp_server.server:main"
+[tool.hatch.build.targets.wheel]
+packages = ["src/fal_mcp_server"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
