@@ -1,79 +1,116 @@
-# 🎨 MCP Server for Fal.ai
+# 🎨 Fal.ai MCP Server
 
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
-[![MCP](https://img.shields.io/badge/MCP-1.0.0-green)](https://modelcontextprotocol.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP](https://img.shields.io/badge/MCP-1.0-blue)](https://modelcontextprotocol.io)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-green)](https://www.python.org)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-A Model Context Protocol (MCP) server that enables AI agents to generate images, videos, music, and speech using Fal.ai powerful AI models.
+A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP clients) to generate images, videos, music, and audio using [Fal.ai](https://fal.ai) models.
 
 ## ✨ Features
 
-- 🖼️ **Image Generation** - Create images with Flux, SDXL, and other models
-- 🎬 **Video Generation** - Transform images into videos
-- 🎵 **Music Generation** - Generate music from text descriptions
+- 🖼️ **Image Generation** - Create images using Flux, SDXL, and other models
+- 🎬 **Video Generation** - Generate videos from images or text prompts  
+- 🎵 **Music Generation** - Create music from text descriptions
 - 🗣️ **Text-to-Speech** - Convert text to natural speech
-- 📝 **Speech-to-Text** - Transcribe audio with Whisper
+- 📝 **Audio Transcription** - Transcribe audio using Whisper
+- ⬆️ **Image Upscaling** - Enhance image resolution
+- 🔄 **Image-to-Image** - Transform existing images with prompts
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Python 3.10 or higher
-- A [Fal.ai API key](https://fal.ai/dashboard)
-- An MCP-compatible client (Claude Desktop, Cline, etc.)
+- [Fal.ai API key](https://fal.ai) (free tier available)
+- Claude Desktop (or any MCP-compatible client)
 
 ### Installation
 
-1. Clone the repository:
+#### Option 1: Using uv (Recommended)
+
 ```bash
-git clone https://github.com/yourusername/mcp-server-fal.git
-cd mcp-server-fal
+git clone https://github.com/[your-username]/fal-mcp-server.git
+cd fal-mcp-server
+uv pip install -e .
 ```
 
-2. Create a virtual environment:
+#### Option 2: Using pip
+
 ```bash
+git clone https://github.com/[your-username]/fal-mcp-server.git
+cd fal-mcp-server
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e .
 ```
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+### Configuration
 
-4. Set up your API key:
-```bash
-cp .env.example .env
-# Edit .env and add your Fal.ai API key
-```
+1. Get your Fal.ai API key from [fal.ai](https://fal.ai)
 
-### Configuration for Claude Desktop
-
-Add to your Claude Desktop configuration:
+2. Configure Claude Desktop by adding to:
+   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "fal-ai": {
-      "command": "python",
-      "args": ["/path/to/mcp-server-fal/src/fal_mcp_server/server.py"],
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp",
+        "--with",
+        "fal-client",
+        "python",
+        "/path/to/fal-mcp-server/src/fal_mcp_server/server.py"
+      ],
       "env": {
-        "FAL_KEY": "your-fal-api-key-here"
+        "FAL_KEY": "your-fal-api-key"
       }
     }
   }
 }
 ```
 
-## 📖 Usage
+3. Restart Claude Desktop
 
-Once configured, your AI assistant can generate images, videos, music, and more!
+## 💬 Usage
 
-## 📜 License
+Once configured, ask Claude to:
+
+- "Generate an image of a sunset"
+- "Create a video from this image"  
+- "Generate 30 seconds of ambient music"
+- "Convert this text to speech"
+- "Transcribe this audio file"
+
+## 📦 Supported Models
+
+### Image Models
+- `flux_schnell` - Fast high-quality generation
+- `flux_dev` - Development version with more control
+- `sdxl` - Stable Diffusion XL
+
+### Video Models
+- `svd` - Stable Video Diffusion
+- `animatediff` - Text-to-video animation
+
+### Audio Models
+- `musicgen` - Music generation
+- `bark` - Text-to-speech
+- `whisper` - Audio transcription
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## 📝 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
 - [Fal.ai](https://fal.ai) for providing the AI models
-- [Anthropic](https://anthropic.com) for creating the MCP protocol
+- [Anthropic](https://anthropic.com) for the MCP specification
