@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "fal-ai": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp",
+        "--with",
+        "fal-client",
+        "python",
+        "/Users/raveenbeemsingh/Developer/fal-mcp-server/src/fal_mcp_server/server.py"
+      ],
+      "env": {
+        "FAL_KEY": "your-fal-api-key-here"
+      }
+    }
+  }
+}
