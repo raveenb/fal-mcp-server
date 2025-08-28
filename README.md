@@ -9,6 +9,11 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 
 ## ✨ Features
 
+### 🚀 Performance
+- **Native Async API** - Uses fal_client.run_async() for optimal performance
+- **Queue Support** - Long-running tasks (video/music) use queue API with progress updates
+- **Non-blocking** - All operations are truly asynchronous
+
 - 🖼️ **Image Generation** - Create images using Flux, SDXL, and other models
 - 🎬 **Video Generation** - Generate videos from images or text prompts  
 - 🎵 **Music Generation** - Create music from text descriptions
