@@ -29,7 +29,7 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 #### Option 1: Using uv (Recommended)
 
 ```bash
-git clone https://github.com/[your-username]/fal-mcp-server.git
+git clone https://github.com/raveenb/fal-mcp-server.git
 cd fal-mcp-server
 uv pip install -e .
 ```
@@ -37,7 +37,7 @@ uv pip install -e .
 #### Option 2: Using pip
 
 ```bash
-git clone https://github.com/[your-username]/fal-mcp-server.git
+git clone https://github.com/raveenb/fal-mcp-server.git
 cd fal-mcp-server
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
