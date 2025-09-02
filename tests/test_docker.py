@@ -80,7 +80,7 @@ class TestDockerIntegration:
         subprocess.run(
             ["docker", "rm", "-f", "fal-mcp-pytest"], capture_output=True, check=False
         )
-        
+
         # Start container in HTTP mode
         result = subprocess.run(
             [
@@ -112,7 +112,14 @@ class TestDockerIntegration:
         try:
             # Check if container is running
             result = subprocess.run(
-                ["docker", "ps", "--filter", "name=fal-mcp-pytest", "--format", "{{.Names}}"],
+                [
+                    "docker",
+                    "ps",
+                    "--filter",
+                    "name=fal-mcp-pytest",
+                    "--format",
+                    "{{.Names}}",
+                ],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -125,15 +132,19 @@ class TestDockerIntegration:
                 ["docker", "logs", "fal-mcp-pytest"],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
             # Check that server started successfully
-            assert "Uvicorn running on" in logs.stderr or "Server running" in logs.stderr
+            assert (
+                "Uvicorn running on" in logs.stderr or "Server running" in logs.stderr
+            )
 
         finally:
             # Stop and remove container
             subprocess.run(
-                ["docker", "rm", "-f", "fal-mcp-pytest"], capture_output=True, check=False
+                ["docker", "rm", "-f", "fal-mcp-pytest"],
+                capture_output=True,
+                check=False,
             )
 
     def test_docker_environment_variables(self):
@@ -168,7 +179,7 @@ class TestDockerIntegration:
         subprocess.run(
             ["docker", "rm", "-f", "fal-mcp-pytest"], capture_output=True, check=False
         )
-        
+
         # Start container
         subprocess.run(
             [
@@ -216,19 +227,21 @@ class TestDockerIntegration:
                         ["docker", "logs", "fal-mcp-pytest"],
                         capture_output=True,
                         text=True,
-                        check=False
+                        check=False,
                     )
                     print(f"Container unhealthy. Logs: {logs.stdout}")
                     break
                 time.sleep(2)
-            
+
             # Health check should have succeeded or container should be starting
             assert healthy or "starting" in result.stdout
-            
+
         finally:
             # Clean up
             subprocess.run(
-                ["docker", "rm", "-f", "fal-mcp-pytest"], capture_output=True, check=False
+                ["docker", "rm", "-f", "fal-mcp-pytest"],
+                capture_output=True,
+                check=False,
             )
 
     def test_docker_non_root_user(self):
@@ -286,7 +299,7 @@ def get_docker_compose_command():
     )
     if result.returncode == 0:
         return ["docker", "compose"]
-    
+
     # Try 'docker-compose' (older Docker versions)
     result = subprocess.run(
         ["docker-compose", "--version"],
@@ -295,7 +308,7 @@ def get_docker_compose_command():
     )
     if result.returncode == 0:
         return ["docker-compose"]
-    
+
     return None
 
 
@@ -308,7 +321,7 @@ class TestDockerCompose:
         compose_cmd = get_docker_compose_command()
         if compose_cmd is None:
             pytest.skip("Docker Compose not available")
-        
+
         result = subprocess.run(
             compose_cmd + ["config"],
             capture_output=True,
@@ -323,7 +336,7 @@ class TestDockerCompose:
         compose_cmd = get_docker_compose_command()
         if compose_cmd is None:
             pytest.skip("Docker Compose not available")
-        
+
         # Just validate the config, don't actually build
         result = subprocess.run(
             compose_cmd + ["config", "--quiet"],

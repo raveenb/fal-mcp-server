@@ -335,7 +335,7 @@ class FalMCPServer:
 
         # Convert handle_sse to a Starlette endpoint
         from starlette.requests import Request
-        
+
         async def sse_endpoint(request: Request) -> Response:
             """Starlette endpoint wrapper for SSE handler"""
             await handle_sse(request.scope, request.receive, request._send)
