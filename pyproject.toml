@@ -18,7 +18,20 @@ classifiers = [
 dependencies = [
     "mcp>=1.0.0",
     "fal-client>=0.4.0",
+    "starlette>=0.27.0",
+    "uvicorn>=0.31.0",
+    "sse-starlette>=1.6.0",
 ]
+
+[project.urls]
+homepage = "https://github.com/raveenb/fal-mcp-server"
+repository = "https://github.com/raveenb/fal-mcp-server"
+issues = "https://github.com/raveenb/fal-mcp-server/issues"
+
+[project.scripts]
+fal-mcp = "fal_mcp_server.server:main"
+fal-mcp-http = "fal_mcp_server.server_http:main"
+fal-mcp-dual = "fal_mcp_server.server_dual:main"
 
 [project.optional-dependencies]
 dev = [

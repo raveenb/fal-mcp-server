@@ -16,6 +16,12 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 - **Queue Support** - Long-running tasks (video/music) use queue API with progress updates
 - **Non-blocking** - All operations are truly asynchronous
 
+### 🌐 Transport Modes (New!)
+- **STDIO** - Traditional Model Context Protocol communication
+- **HTTP/SSE** - Web-based access via Server-Sent Events
+- **Dual Mode** - Run both transports simultaneously
+
+### 🎨 Media Generation
 - 🖼️ **Image Generation** - Create images using Flux, SDXL, and other models
 - 🎬 **Video Generation** - Generate videos from images or text prompts  
 - 🎵 **Music Generation** - Create music from text descriptions
@@ -95,6 +101,8 @@ pip install -e .
 
 ## 💬 Usage
 
+### With Claude Desktop
+
 Once configured, ask Claude to:
 
 - "Generate an image of a sunset"
@@ -102,6 +110,24 @@ Once configured, ask Claude to:
 - "Generate 30 seconds of ambient music"
 - "Convert this text to speech"
 - "Transcribe this audio file"
+
+### HTTP/SSE Transport (New!)
+
+Run the server with HTTP transport for web-based access:
+
+```bash
+# HTTP server only
+fal-mcp-http --host 0.0.0.0 --port 8000
+
+# Or dual mode (STDIO + HTTP)
+fal-mcp-dual --transport dual --port 8000
+```
+
+Connect from web clients via Server-Sent Events:
+- SSE endpoint: `http://localhost:8000/sse`
+- Message endpoint: `POST http://localhost:8000/messages/`
+
+See [HTTP Transport Documentation](docs/HTTP_TRANSPORT.md) for details.
 
 ## 📦 Supported Models
 
