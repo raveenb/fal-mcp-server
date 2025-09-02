@@ -260,31 +260,35 @@ class TestDockerIntegration:
 
     def test_docker_volume_mount(self):
         """Test that volumes can be mounted"""
-        # Create a test file
-        test_content = "test configuration"
-        with open("/tmp/test-config.txt", "w") as f:
+        import tempfile
+
+        # Create a temporary file in a more portable way
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
+            test_content = "test configuration"
             f.write(test_content)
+            temp_path = f.name
 
-        result = subprocess.run(
-            [
-                "docker",
-                "run",
-                "--rm",
-                "-v",
-                "/tmp/test-config.txt:/app/config.txt",
-                "fal-mcp-test:pytest",
-                "cat",
-                "/app/config.txt",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        # Clean up
-        os.remove("/tmp/test-config.txt")
-
-        assert test_content in result.stdout
+        try:
+            result = subprocess.run(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "-v",
+                    f"{temp_path}:/app/config.txt",
+                    "fal-mcp-test:pytest",
+                    "cat",
+                    "/app/config.txt",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            assert test_content in result.stdout
+        finally:
+            # Clean up
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
 
 
 def get_docker_compose_command():
