@@ -42,7 +42,6 @@ jobs:
     
     - name: Test documentation
       run: |
-        pip install pyyaml
         pytest tests/test_docs.py -v
     
     - name: Type check with mypy

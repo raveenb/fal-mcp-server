@@ -43,6 +43,7 @@ dev = [
     "mypy>=1.5.0",
     "types-aiofiles>=23.0.0",
     "requests>=2.31.0",
+    "pyyaml>=6.0.0",
 ]
 
 [build-system]
