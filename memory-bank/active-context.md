@@ -16,6 +16,13 @@
 
 ## Current Session Notes
 
+- [7:48:35 PM] [Unknown User] Released v0.3.0 to PyPI: Successfully published fal-mcp-server v0.3.0 to PyPI:
+- Fixed version synchronization issue
+- Package now installable via pip install fal-mcp-server
+- Updated README with PyPI installation instructions
+- Created release checklist in Memory Bank for future releases
+- CI/CD pipeline working end-to-end
+- [7:47:46 PM] [Unknown User] File Update: Updated release-checklist.md
 - [7:18:33 PM] [Unknown User] File Update: Updated product-context.md
 - [Note 1]
 - [Note 2]

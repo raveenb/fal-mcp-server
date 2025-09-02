@@ -123,6 +123,18 @@ Once configured, ask Claude to:
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+### Local Development
+
+We support local CI testing with `act`:
+
+```bash
+# Quick setup
+make ci-local  # Run CI locally before pushing
+
+# See detailed guide
+cat docs/LOCAL_TESTING.md
+```
+
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE) file for details.

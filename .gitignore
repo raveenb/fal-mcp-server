@@ -57,6 +57,7 @@ logs/
 .env.local
 *.key
 config.json
+.secrets
 
 # MCP specific
 mcp-server-*.log
