@@ -10,6 +10,7 @@
 
 ## Update History
 
+- [2025-09-02 7:55:26 PM] [Unknown User] - File Update: Updated testing-policy.md
 - [2025-09-02 7:48:35 PM] [Unknown User] - Released v0.3.0 to PyPI: Successfully published fal-mcp-server v0.3.0 to PyPI:
 - Fixed version synchronization issue
 - Package now installable via pip install fal-mcp-server
