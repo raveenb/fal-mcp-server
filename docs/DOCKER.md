@@ -1,4 +1,16 @@
+---
+layout: page
+title: Docker Deployment - Fal MCP Server
+description: Deploy Fal MCP Server using the official Docker image from GitHub Container Registry with comprehensive transport mode support.
+keywords: Docker, container, GitHub Packages, deployment, Fal MCP Server
+---
+
 # Docker Support
+
+**🎉 Official Docker image now available on GitHub Container Registry!**
+
+[![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue?logo=docker)](https://github.com/raveenb/fal-mcp-server/pkgs/container/fal-mcp-server)
+[![Image Size](https://img.shields.io/badge/Size-~150MB-green)](https://github.com/raveenb/fal-mcp-server/pkgs/container/fal-mcp-server)
 
 The Fal MCP Server provides comprehensive Docker support with multi-transport capabilities, allowing you to run the server in various configurations without local Python installation.
 
@@ -30,10 +42,18 @@ docker run -d \
 
 ## Available Images
 
-Images are published to GitHub Container Registry:
-- `ghcr.io/raveenb/fal-mcp-server:latest` - Latest stable release
-- `ghcr.io/raveenb/fal-mcp-server:v0.4.0` - Specific version
-- `ghcr.io/raveenb/fal-mcp-server:main` - Latest main branch build
+**✅ Official images are published to GitHub Container Registry with every release!**
+
+Pull the official image:
+```bash
+docker pull ghcr.io/raveenb/fal-mcp-server:latest
+```
+
+Available tags:
+- `ghcr.io/raveenb/fal-mcp-server:latest` - Latest stable release (recommended)
+- `ghcr.io/raveenb/fal-mcp-server:v0.3.0` - Specific version for production
+- `ghcr.io/raveenb/fal-mcp-server:v0.2.0` - Previous stable version
+- `ghcr.io/raveenb/fal-mcp-server:main` - Latest development build
 
 ## Transport Modes
 
