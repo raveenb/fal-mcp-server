@@ -1,7 +1,9 @@
 # 🎨 Fal.ai MCP Server
 
+[![CI](https://github.com/raveenb/fal-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/raveenb/fal-mcp-server/actions/workflows/ci.yml)
 [![MCP](https://img.shields.io/badge/MCP-1.0-blue)](https://modelcontextprotocol.io)
 [![GitHub Release](https://img.shields.io/github/v/release/raveenb/fal-mcp-server)](https://github.com/raveenb/fal-mcp-server/releases)
+[![PyPI](https://img.shields.io/pypi/v/fal-mcp-server)](https://pypi.org/project/fal-mcp-server/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-green)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 

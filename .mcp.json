@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@context7/mcp-server"],
+      "description": "Library documentation retrieval server"
+    },
+    "memory-bank": {
+      "command": "npx",
+      "args": ["-y", "@memory-bank/mcp-server"],
+      "description": "Memory bank for project context and decision tracking"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@sequential-thinking/mcp-server"],
+      "description": "Sequential thinking tool for complex problem solving"
+    }
+  }
+}
