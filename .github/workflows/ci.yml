@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12']
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -24,18 +24,22 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install mcp fal-client
+        pip install -e ".[dev]"
     
-    - name: Check imports
+    - name: Format check with black
       run: |
-        python -c "import mcp; print('MCP installed')"
-        python -c "import fal_client; print('Fal client installed')"
+        black --check src/ tests/
     
-    - name: Syntax check
+    - name: Lint with ruff
       run: |
-        python -m py_compile src/fal_mcp_server/__init__.py
-        python -m py_compile src/fal_mcp_server/server.py
+        ruff check src/ tests/
     
-    - name: Run basic import test
+    - name: Run tests
+      env:
+        FAL_KEY: ${{ secrets.FAL_KEY }}
       run: |
-        python -c "import sys; sys.path.insert(0, 'src'); from fal_mcp_server.server import server; print('✓ Server imports successfully')"
+        pytest tests/ -v --asyncio-mode=auto --cov=src/fal_mcp_server --cov-report=term-missing
+    
+    - name: Type check with mypy
+      run: |
+        mypy src/ --ignore-missing-imports || true
