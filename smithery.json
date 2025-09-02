@@ -1,0 +1,289 @@
+{
+  "name": "fal-mcp-server",
+  "title": "Fal MCP Server - AI Image, Video & Music Generation",
+  "description": "Generate stunning AI images, videos, and music using Fal.ai models (FLUX, Stable Diffusion, MusicGen) directly in Claude Desktop through the Model Context Protocol",
+  "version": "0.3.0",
+  "author": {
+    "name": "Raveen Beemsingh",
+    "email": "raveen.b@gmail.com",
+    "github": "raveenb"
+  },
+  "license": "MIT",
+  "urls": {
+    "repository": "https://github.com/raveenb/fal-mcp-server",
+    "homepage": "https://raveenb.github.io/fal-mcp-server/",
+    "documentation": "https://raveenb.github.io/fal-mcp-server/",
+    "issues": "https://github.com/raveenb/fal-mcp-server/issues",
+    "pypi": "https://pypi.org/project/fal-mcp-server/",
+    "docker": "ghcr.io/raveenb/fal-mcp-server"
+  },
+  "categories": [
+    "ai-ml",
+    "generation",
+    "creative-tools",
+    "media",
+    "claude-integration"
+  ],
+  "keywords": [
+    "fal",
+    "ai",
+    "image-generation",
+    "video-generation", 
+    "music-generation",
+    "flux",
+    "stable-diffusion",
+    "musicgen",
+    "claude",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "runtime": {
+    "language": "python",
+    "minVersion": "3.10",
+    "package": "fal-mcp-server"
+  },
+  "requirements": {
+    "apiKey": {
+      "name": "FAL_KEY",
+      "description": "Fal.ai API key",
+      "required": true,
+      "url": "https://fal.ai/dashboard/keys"
+    }
+  },
+  "installation": [
+    {
+      "type": "pip",
+      "command": "pip install fal-mcp-server"
+    },
+    {
+      "type": "docker",
+      "command": "docker pull ghcr.io/raveenb/fal-mcp-server:latest"
+    },
+    {
+      "type": "uv",
+      "command": "uv pip install fal-mcp-server"
+    }
+  ],
+  "configuration": {
+    "claude": {
+      "mcpServers": {
+        "fal-mcp-server": {
+          "command": "fal-mcp",
+          "args": [],
+          "env": {
+            "FAL_KEY": "your-api-key-here"
+          }
+        }
+      }
+    }
+  },
+  "transports": [
+    {
+      "type": "stdio",
+      "default": true,
+      "description": "Standard I/O for Claude Desktop integration"
+    },
+    {
+      "type": "http",
+      "port": 8080,
+      "description": "HTTP/SSE for web-based access"
+    },
+    {
+      "type": "dual",
+      "description": "Both STDIO and HTTP simultaneously"
+    }
+  ],
+  "tools": [
+    {
+      "name": "generate_image",
+      "description": "Generate images from text prompts using AI models",
+      "parameters": {
+        "prompt": {
+          "type": "string",
+          "required": true,
+          "description": "Text description of the image to generate"
+        },
+        "model": {
+          "type": "string",
+          "default": "flux_schnell",
+          "enum": ["flux_schnell", "flux_dev", "flux_pro", "sdxl", "sd3", "lcm"],
+          "description": "AI model to use for generation"
+        },
+        "image_size": {
+          "type": "string",
+          "default": "landscape_16_9",
+          "description": "Output image dimensions"
+        },
+        "num_images": {
+          "type": "integer",
+          "default": 1,
+          "min": 1,
+          "max": 4,
+          "description": "Number of images to generate"
+        }
+      }
+    },
+    {
+      "name": "generate_video",
+      "description": "Create videos from images using AI models",
+      "parameters": {
+        "image_url": {
+          "type": "string",
+          "required": true,
+          "description": "URL of the source image"
+        },
+        "model": {
+          "type": "string",
+          "default": "svd",
+          "enum": ["svd", "animatediff", "kling"],
+          "description": "Video generation model"
+        },
+        "duration": {
+          "type": "integer",
+          "default": 4,
+          "min": 2,
+          "max": 10,
+          "description": "Video duration in seconds"
+        }
+      }
+    },
+    {
+      "name": "generate_music",
+      "description": "Generate music and audio from text descriptions",
+      "parameters": {
+        "prompt": {
+          "type": "string",
+          "required": true,
+          "description": "Description of the music to generate"
+        },
+        "model": {
+          "type": "string",
+          "default": "musicgen_large",
+          "enum": ["musicgen_small", "musicgen_medium", "musicgen_large", "bark"],
+          "description": "Audio generation model"
+        },
+        "duration": {
+          "type": "integer",
+          "default": 30,
+          "min": 5,
+          "max": 120,
+          "description": "Audio duration in seconds"
+        }
+      }
+    }
+  ],
+  "models": {
+    "image": [
+      {
+        "id": "flux_schnell",
+        "name": "FLUX Schnell",
+        "description": "Fast image generation (2-3 seconds)",
+        "provider": "Black Forest Labs"
+      },
+      {
+        "id": "flux_dev",
+        "name": "FLUX Dev",
+        "description": "High-quality development model",
+        "provider": "Black Forest Labs"
+      },
+      {
+        "id": "flux_pro",
+        "name": "FLUX Pro",
+        "description": "Professional quality model",
+        "provider": "Black Forest Labs"
+      },
+      {
+        "id": "sdxl",
+        "name": "Stable Diffusion XL",
+        "description": "Popular open-source model",
+        "provider": "Stability AI"
+      }
+    ],
+    "video": [
+      {
+        "id": "svd",
+        "name": "Stable Video Diffusion",
+        "description": "Image-to-video generation",
+        "provider": "Stability AI"
+      },
+      {
+        "id": "animatediff",
+        "name": "AnimateDiff",
+        "description": "Animation from static images",
+        "provider": "Community"
+      }
+    ],
+    "audio": [
+      {
+        "id": "musicgen_large",
+        "name": "MusicGen Large",
+        "description": "High-quality music generation",
+        "provider": "Meta"
+      },
+      {
+        "id": "bark",
+        "name": "Bark",
+        "description": "Text-to-speech synthesis",
+        "provider": "Suno"
+      }
+    ]
+  },
+  "features": [
+    "Native async API for fast performance",
+    "Queue management for long-running tasks",
+    "Progress tracking for generation tasks",
+    "Multiple aspect ratios and resolutions",
+    "Batch generation support",
+    "Docker support with official image",
+    "Comprehensive error handling",
+    "Type-safe Python implementation"
+  ],
+  "badges": [
+    {
+      "type": "pypi",
+      "url": "https://badge.fury.io/py/fal-mcp-server.svg"
+    },
+    {
+      "type": "docker",
+      "url": "https://img.shields.io/badge/Docker-ghcr.io-blue?logo=docker"
+    },
+    {
+      "type": "license",
+      "url": "https://img.shields.io/badge/License-MIT-yellow.svg"
+    },
+    {
+      "type": "github-stars",
+      "url": "https://img.shields.io/github/stars/raveenb/fal-mcp-server?style=social"
+    }
+  ],
+  "examples": [
+    {
+      "title": "Generate an Image",
+      "description": "Create a cyberpunk city scene",
+      "prompt": "Generate an image of a cyberpunk city at sunset with neon lights",
+      "tool": "generate_image",
+      "model": "flux_dev"
+    },
+    {
+      "title": "Create a Video",
+      "description": "Animate a landscape image",
+      "prompt": "Create a video from this landscape image",
+      "tool": "generate_video",
+      "model": "svd"
+    },
+    {
+      "title": "Generate Music",
+      "description": "Create ambient background music",
+      "prompt": "Generate 60 seconds of calm ambient electronic music",
+      "tool": "generate_music",
+      "model": "musicgen_large"
+    }
+  ],
+  "metrics": {
+    "stars": "https://img.shields.io/github/stars/raveenb/fal-mcp-server",
+    "downloads": "https://pepy.tech/badge/fal-mcp-server",
+    "version": "https://badge.fury.io/py/fal-mcp-server.svg",
+    "tests": "95%+ coverage",
+    "ci": "GitHub Actions"
+  }
+}
