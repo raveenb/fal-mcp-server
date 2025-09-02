@@ -1,0 +1,91 @@
+# GitHub Pages Configuration for Fal MCP Server
+title: Fal MCP Server
+description: Generate images, videos, and audio with AI models through Claude using the Model Context Protocol
+author: Raveen Beemsingh
+email: your-email@example.com
+url: https://raveenb.github.io
+baseurl: /fal-mcp-server
+
+# SEO and Social
+twitter:
+  username: raveenb
+  card: summary_large_image
+logo: /assets/img/logo.png
+social:
+  name: Raveen Beemsingh
+  links:
+    - https://github.com/raveenb
+    - https://twitter.com/raveenb
+
+# Build settings
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+  - jekyll-redirect-from
+
+# Analytics
+google_analytics: # Add your GA4 ID here
+
+# Markdown settings
+markdown: kramdown
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+    span:
+      line_numbers: false
+    block:
+      line_numbers: true
+
+# Collections
+collections:
+  examples:
+    output: true
+    permalink: /examples/:path/
+  api:
+    output: true
+    permalink: /api/:path/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+      author: "Raveen Beemsingh"
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "api"
+      type: "pages"
+    values:
+      layout: "api"
+  - scope:
+      path: "examples"
+      type: "pages"
+    values:
+      layout: "example"
+
+# Exclude from build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - .bundle
+  - .jekyll-cache
+  - node_modules
+
+# Compress HTML
+compress_html:
+  clippings: all
+  comments: all
+  endings: all
+  startings: []
+  blanklines: false
+  profile: false
