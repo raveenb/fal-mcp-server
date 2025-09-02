@@ -3,10 +3,8 @@
 import os
 import subprocess
 import time
-from unittest.mock import patch
 
 import pytest
-import requests
 
 
 def docker_available():
@@ -205,7 +203,7 @@ class TestDockerIntegration:
             # Wait for container to be healthy
             max_attempts = 15  # More attempts since health check has start period
             healthy = False
-            for i in range(max_attempts):
+            for _ in range(max_attempts):
                 result = subprocess.run(
                     [
                         "docker",
