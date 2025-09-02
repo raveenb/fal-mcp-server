@@ -3,20 +3,21 @@
 
 import asyncio
 import os
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
+import fal_client
+import mcp.server.stdio
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
-from mcp.types import Tool, TextContent, ServerCapabilities
-import mcp.server.stdio
-import fal_client
+from mcp.types import ServerCapabilities, TextContent, Tool, ToolsCapability
 
-# Configure Fal client  
+# Configure Fal client
 if api_key := os.getenv("FAL_KEY"):
     os.environ["FAL_KEY"] = api_key
 
 # Initialize the MCP server
 server = Server("fal-ai-mcp")
+
 
 @server.list_tools()
 async def list_tools() -> List[Tool]:
@@ -29,24 +30,24 @@ async def list_tools() -> List[Tool]:
                 "properties": {
                     "prompt": {
                         "type": "string",
-                        "description": "Text description of the image to generate"
+                        "description": "Text description of the image to generate",
                     },
                     "model": {
                         "type": "string",
                         "enum": ["flux_schnell", "flux_dev", "sdxl"],
                         "default": "flux_schnell",
-                        "description": "Model to use (flux_schnell, flux_dev, or sdxl)"
+                        "description": "Model to use (flux_schnell, flux_dev, or sdxl)",
                     },
                     "num_images": {
                         "type": "integer",
                         "default": 1,
                         "minimum": 1,
                         "maximum": 4,
-                        "description": "Number of images to generate"
-                    }
+                        "description": "Number of images to generate",
+                    },
                 },
-                "required": ["prompt"]
-            }
+                "required": ["prompt"],
+            },
         ),
         Tool(
             name="generate_video",
@@ -56,16 +57,16 @@ async def list_tools() -> List[Tool]:
                 "properties": {
                     "image_url": {
                         "type": "string",
-                        "description": "URL of the image to animate into video"
+                        "description": "URL of the image to animate into video",
                     },
                     "duration": {
                         "type": "integer",
                         "default": 4,
-                        "description": "Video duration in seconds"
-                    }
+                        "description": "Video duration in seconds",
+                    },
                 },
-                "required": ["image_url"]
-            }
+                "required": ["image_url"],
+            },
         ),
         Tool(
             name="generate_music",
@@ -75,20 +76,21 @@ async def list_tools() -> List[Tool]:
                 "properties": {
                     "prompt": {
                         "type": "string",
-                        "description": "Description of the music to generate"
+                        "description": "Description of the music to generate",
                     },
                     "duration_seconds": {
                         "type": "integer",
                         "default": 30,
                         "minimum": 5,
                         "maximum": 300,
-                        "description": "Duration in seconds"
-                    }
+                        "description": "Duration in seconds",
+                    },
                 },
-                "required": ["prompt"]
-            }
-        )
+                "required": ["prompt"],
+            },
+        ),
     ]
+
 
 @server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
@@ -97,21 +99,21 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             model_map = {
                 "flux_schnell": "fal-ai/flux/schnell",
                 "flux_dev": "fal-ai/flux/dev",
-                "sdxl": "fal-ai/fast-sdxl"
+                "sdxl": "fal-ai/fast-sdxl",
             }
-            
+
             model_key = arguments.get("model", "flux_schnell")
             model_id = model_map.get(model_key, "fal-ai/flux/schnell")
-            
+
             result = await asyncio.to_thread(
                 fal_client.run,
                 model_id,
                 arguments={
                     "prompt": arguments["prompt"],
-                    "num_images": arguments.get("num_images", 1)
-                }
+                    "num_images": arguments.get("num_images", 1),
+                },
             )
-            
+
             images = result.get("images", [])
             if images:
                 urls = [img["url"] for img in images]
@@ -119,50 +121,53 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 for i, url in enumerate(urls, 1):
                     response += f"Image {i}: {url}\n"
                 return [TextContent(type="text", text=response)]
-            
+
         elif name == "generate_video":
             result = await asyncio.to_thread(
                 fal_client.run,
                 "fal-ai/stable-video-diffusion",
                 arguments={
                     "image_url": arguments["image_url"],
-                    "duration": arguments.get("duration", 4)
-                }
+                    "duration": arguments.get("duration", 4),
+                },
             )
-            
+
             video_url = result.get("video", {}).get("url")
             if video_url:
-                return [TextContent(
-                    type="text",
-                    text=f"🎬 Generated video: {video_url}"
-                )]
-                
+                return [
+                    TextContent(type="text", text=f"🎬 Generated video: {video_url}")
+                ]
+
         elif name == "generate_music":
             result = await asyncio.to_thread(
                 fal_client.run,
                 "fal-ai/musicgen-medium",
                 arguments={
                     "prompt": arguments["prompt"],
-                    "duration_seconds": arguments.get("duration_seconds", 30)
-                }
+                    "duration_seconds": arguments.get("duration_seconds", 30),
+                },
             )
-            
+
             audio_url = result.get("audio", {}).get("url") or result.get("audio_url")
             if audio_url:
-                return [TextContent(
-                    type="text",
-                    text=f"🎵 Generated music: {audio_url}"
-                )]
-        
-        return [TextContent(type="text", text=f"Tool {name} completed but no output generated")]
-        
+                return [
+                    TextContent(type="text", text=f"🎵 Generated music: {audio_url}")
+                ]
+
+        return [
+            TextContent(
+                type="text", text=f"Tool {name} completed but no output generated"
+            )
+        ]
+
     except Exception as e:
         error_msg = f"❌ Error: {str(e)}"
         if "FAL_KEY" not in os.environ:
             error_msg += "\n⚠️ FAL_KEY environment variable not set!"
         return [TextContent(type="text", text=error_msg)]
 
-async def run():
+
+async def run() -> None:
     """Run the MCP server"""
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
@@ -172,13 +177,15 @@ async def run():
                 server_name="fal-ai-mcp",
                 server_version="1.0.0",
                 capabilities=ServerCapabilities(
-                    tools={}  # Enable tools capability
-                )
-            )
+                    tools=ToolsCapability()
+                ),  # Enable tools capability
+            ),
         )
 
-def main():
+
+def main() -> None:
     asyncio.run(run())
+
 
 if __name__ == "__main__":
     main()
