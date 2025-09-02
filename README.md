@@ -1,9 +1,11 @@
 # 🎨 Fal.ai MCP Server
 
 [![CI](https://github.com/raveenb/fal-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/raveenb/fal-mcp-server/actions/workflows/ci.yml)
+[![Docker](https://github.com/raveenb/fal-mcp-server/actions/workflows/docker.yml/badge.svg)](https://github.com/raveenb/fal-mcp-server/actions/workflows/docker.yml)
 [![MCP](https://img.shields.io/badge/MCP-1.0-blue)](https://modelcontextprotocol.io)
 [![GitHub Release](https://img.shields.io/github/v/release/raveenb/fal-mcp-server)](https://github.com/raveenb/fal-mcp-server/releases)
 [![PyPI](https://img.shields.io/pypi/v/fal-mcp-server)](https://pypi.org/project/fal-mcp-server/)
+[![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue?logo=docker)](https://github.com/raveenb/fal-mcp-server/pkgs/container/fal-mcp-server)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-green)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -40,7 +42,30 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 
 ### Installation
 
-#### Option 1: Install from PyPI (Recommended)
+#### Option 1: Docker (Recommended for Production) 🐳
+
+Official Docker image available on GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/raveenb/fal-mcp-server:latest
+
+# Run with your API key
+docker run -d \
+  --name fal-mcp \
+  -e FAL_KEY=your-api-key \
+  -p 8080:8080 \
+  ghcr.io/raveenb/fal-mcp-server:latest
+```
+
+Or use Docker Compose:
+```bash
+curl -O https://raw.githubusercontent.com/raveenb/fal-mcp-server/main/docker-compose.yml
+echo "FAL_KEY=your-api-key" > .env
+docker-compose up -d
+```
+
+#### Option 2: Install from PyPI
 
 ```bash
 pip install fal-mcp-server
@@ -51,7 +76,7 @@ Or with uv:
 uv pip install fal-mcp-server
 ```
 
-#### Option 2: Install from source
+#### Option 3: Install from source
 
 ```bash
 git clone https://github.com/raveenb/fal-mcp-server.git
@@ -66,6 +91,18 @@ pip install -e .
 2. Configure Claude Desktop by adding to:
    - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+#### For Docker Installation:
+```json
+{
+  "mcpServers": {
+    "fal-ai": {
+      "command": "curl",
+      "args": ["-N", "http://localhost:8080/sse"]
+    }
+  }
+}
+```
 
 #### For PyPI Installation:
 ```json
@@ -116,7 +153,10 @@ Once configured, ask Claude to:
 Run the server with HTTP transport for web-based access:
 
 ```bash
-# HTTP server only
+# Using Docker (recommended)
+docker run -d -e FAL_KEY=your-key -p 8080:8080 ghcr.io/raveenb/fal-mcp-server:latest
+
+# Using pip installation
 fal-mcp-http --host 0.0.0.0 --port 8000
 
 # Or dual mode (STDIO + HTTP)
@@ -124,10 +164,10 @@ fal-mcp-dual --transport dual --port 8000
 ```
 
 Connect from web clients via Server-Sent Events:
-- SSE endpoint: `http://localhost:8000/sse`
-- Message endpoint: `POST http://localhost:8000/messages/`
+- SSE endpoint: `http://localhost:8080/sse` (Docker) or `http://localhost:8000/sse` (pip)
+- Message endpoint: `POST http://localhost:8080/messages/`
 
-See [HTTP Transport Documentation](docs/HTTP_TRANSPORT.md) for details.
+See [Docker Documentation](docs/docker.md) and [HTTP Transport Documentation](docs/HTTP_TRANSPORT.md) for details.
 
 ## 📦 Supported Models
 
