@@ -2,7 +2,6 @@
 """Basic tests for Fal.ai MCP Server"""
 
 import sys
-import os
 
 sys.path.insert(0, "../src")
 
