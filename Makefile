@@ -12,7 +12,7 @@ install: ## Install the package in development mode
 	pip install -e ".[dev]"
 
 test: ## Run tests
-	pytest tests/ -v --asyncio-mode=auto
+	pytest tests/ -v --asyncio-mode=auto --cov=src/fal_mcp_server --cov-report=term-missing
 
 lint: ## Run linting
 	ruff check src/ tests/
@@ -20,15 +20,21 @@ lint: ## Run linting
 format: ## Format code
 	black src/ tests/
 
+typecheck: ## Run type checking
+	mypy src/
+
+check: format lint typecheck test ## Run all checks (format, lint, typecheck, test)
+
 # Act commands for local CI testing
 act-install: ## Install act (macOS with Homebrew)
 	@which act > /dev/null || (echo "Installing act..." && brew install act)
 
-ci-local: act-install ## Run CI workflow locally with act
+ci-local: act-install ## Run CI workflow locally with act (tests only, NO release)
 	@if [ ! -f .secrets ]; then \
 		echo "Error: .secrets file not found. Copy .secrets.example to .secrets and add your keys."; \
 		exit 1; \
 	fi
+	@echo "Running CI tests locally (no release/publish)..."
 	act push --workflows .github/workflows/ci.yml
 
 ci-test: act-install ## Test specific Python version locally

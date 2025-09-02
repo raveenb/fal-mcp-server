@@ -16,6 +16,8 @@
 
 ## Current Session Notes
 
+- [8:30:02 PM] [Unknown User] File Update: Updated development-practices.md
+- [8:22:11 PM] [Unknown User] File Update: Updated ci-cd-workflow.md
 - [7:55:26 PM] [Unknown User] File Update: Updated testing-policy.md
 - [7:48:35 PM] [Unknown User] Released v0.3.0 to PyPI: Successfully published fal-mcp-server v0.3.0 to PyPI:
 - Fixed version synchronization issue

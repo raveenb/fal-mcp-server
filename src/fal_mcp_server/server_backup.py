@@ -3,13 +3,13 @@
 
 import asyncio
 import os
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
+import fal_client
+import mcp.server.stdio
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
-from mcp.types import Tool, TextContent, ServerCapabilities
-import mcp.server.stdio
-import fal_client
+from mcp.types import ServerCapabilities, TextContent, Tool, ToolsCapability
 
 # Configure Fal client
 if api_key := os.getenv("FAL_KEY"):
@@ -167,7 +167,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         return [TextContent(type="text", text=error_msg)]
 
 
-async def run():
+async def run() -> None:
     """Run the MCP server"""
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
@@ -176,12 +176,14 @@ async def run():
             InitializationOptions(
                 server_name="fal-ai-mcp",
                 server_version="1.0.0",
-                capabilities=ServerCapabilities(tools={}),  # Enable tools capability
+                capabilities=ServerCapabilities(
+                    tools=ToolsCapability()
+                ),  # Enable tools capability
             ),
         )
 
 
-def main():
+def main() -> None:
     asyncio.run(run())
 
 

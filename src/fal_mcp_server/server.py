@@ -3,17 +3,17 @@
 
 import asyncio
 import os
-from typing import Dict, Any, List, Optional
 import time
+from typing import Any, Dict, List, Optional, cast
+
+# Fal client
+import fal_client
+import mcp.server.stdio
 
 # MCP imports
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
-from mcp.types import Tool, TextContent, ServerCapabilities
-import mcp.server.stdio
-
-# Fal client
-import fal_client
+from mcp.types import ServerCapabilities, TextContent, Tool, ToolsCapability
 
 # Configure Fal client
 if api_key := os.getenv("FAL_KEY"):
@@ -45,7 +45,9 @@ MODELS = {
 }
 
 
-async def wait_for_queue_result(request_id: str, timeout: int = 300) -> Optional[Dict]:
+async def wait_for_queue_result(
+    handle: Any, timeout: int = 300
+) -> Optional[Dict[str, Any]]:
     """Wait for a queued job to complete with timeout"""
     start_time = time.time()
 
@@ -54,8 +56,8 @@ async def wait_for_queue_result(request_id: str, timeout: int = 300) -> Optional
         if time.time() - start_time > timeout:
             return {"error": f"Timeout after {timeout} seconds"}
 
-        # Check status
-        status = await fal_client.status_async(request_id)
+        # Check status using the handle
+        status = await handle.status()
 
         if hasattr(status, "status"):
             status_str = status.status
@@ -63,7 +65,8 @@ async def wait_for_queue_result(request_id: str, timeout: int = 300) -> Optional
             status_str = str(status)
 
         if "completed" in status_str.lower():
-            return await fal_client.result_async(request_id)
+            result = await handle.get()
+            return cast(Dict[str, Any], result)
         elif "failed" in status_str.lower() or "error" in status_str.lower():
             return {"error": f"Job failed: {status}"}
 
@@ -231,10 +234,16 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             response = f"⏳ Video generation queued (ID: {request_id[:8]}...)\n"
             response += "Processing (this may take 30-60 seconds)...\n"
 
-            result = await wait_for_queue_result(request_id, timeout=180)
+            video_result: Optional[Dict[str, Any]] = await wait_for_queue_result(
+                handle, timeout=180
+            )
 
-            if result and "error" not in result:
-                video_url = result.get("video", {}).get("url") or result.get("url")
+            if video_result is not None and "error" not in video_result:
+                video_dict = video_result.get("video", {})
+                if isinstance(video_dict, dict):
+                    video_url = video_dict.get("url")
+                else:
+                    video_url = video_result.get("url")
                 if video_url:
                     return [
                         TextContent(
@@ -243,10 +252,15 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         )
                     ]
             else:
+                error_msg = (
+                    video_result.get("error", "Unknown error")
+                    if video_result
+                    else "Unknown error"
+                )
                 return [
                     TextContent(
                         type="text",
-                        text=f"❌ Video generation failed: {result.get('error', 'Unknown error')}",
+                        text=f"❌ Video generation failed: {error_msg}",
                     )
                 ]
 
@@ -273,12 +287,16 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 f"Generating {duration}s of music (this may take 20-40 seconds)...\n"
             )
 
-            result = await wait_for_queue_result(request_id, timeout=120)
+            music_result: Optional[Dict[str, Any]] = await wait_for_queue_result(
+                handle, timeout=120
+            )
 
-            if result and "error" not in result:
-                audio_url = result.get("audio", {}).get("url") or result.get(
-                    "audio_url"
-                )
+            if music_result is not None and "error" not in music_result:
+                audio_dict = music_result.get("audio", {})
+                if isinstance(audio_dict, dict):
+                    audio_url = audio_dict.get("url")
+                else:
+                    audio_url = music_result.get("audio_url")
                 if audio_url:
                     return [
                         TextContent(
@@ -287,10 +305,15 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         )
                     ]
             else:
+                error_msg = (
+                    music_result.get("error", "Unknown error")
+                    if music_result
+                    else "Unknown error"
+                )
                 return [
                     TextContent(
                         type="text",
-                        text=f"❌ Music generation failed: {result.get('error', 'Unknown error')}",
+                        text=f"❌ Music generation failed: {error_msg}",
                     )
                 ]
 
@@ -307,7 +330,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         return [TextContent(type="text", text=error_msg)]
 
 
-async def run():
+async def run() -> None:
     """Run the MCP server"""
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
@@ -316,12 +339,14 @@ async def run():
             InitializationOptions(
                 server_name="fal-ai-mcp",
                 server_version="1.1.0",
-                capabilities=ServerCapabilities(tools={}),  # Enable tools capability
+                capabilities=ServerCapabilities(
+                    tools=ToolsCapability()
+                ),  # Enable tools capability
             ),
         )
 
 
-def main():
+def main() -> None:
     """Main entry point"""
     asyncio.run(run())
 
