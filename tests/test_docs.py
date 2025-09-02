@@ -2,8 +2,8 @@
 
 import os
 import re
+
 import yaml
-import json
 
 
 def test_docs_directory_exists():
