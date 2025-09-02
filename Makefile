@@ -12,16 +12,27 @@ install: ## Install the package in development mode
 	pip install -e ".[dev]"
 
 test: ## Run tests
-	pytest tests/ -v --asyncio-mode=auto --cov=src/fal_mcp_server --cov-report=term-missing
+	uv run pytest tests/ -v --asyncio-mode=auto --cov=src/fal_mcp_server --cov-report=term-missing
+
+test-docker: ## Run Docker integration tests
+	uv run pytest tests/test_docker.py -v
+
+test-docker-build: ## Build Docker test image
+	docker build -t fal-mcp-test:pytest .
+
+test-docker-run: ## Test Docker container startup
+	docker run --rm -e FAL_KEY=test fal-mcp-test:pytest python -m fal_mcp_server.server --help
+
+test-all: test test-docker ## Run all tests including Docker
 
 lint: ## Run linting
-	ruff check src/ tests/
+	uv run ruff check src/ tests/
 
 format: ## Format code
-	black src/ tests/
+	uv run black src/ tests/
 
 typecheck: ## Run type checking
-	mypy src/
+	uv run mypy src/
 
 check: format lint typecheck test ## Run all checks (format, lint, typecheck, test)
 

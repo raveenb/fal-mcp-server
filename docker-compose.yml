@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # HTTP/SSE Server (default for Docker)
+  fal-mcp-http:
+    image: ghcr.io/raveenb/fal-mcp-server:latest
+    container_name: fal-mcp-http
+    environment:
+      - FAL_KEY=${FAL_KEY}
+      - FAL_MCP_TRANSPORT=http
+      - FAL_MCP_HOST=0.0.0.0
+      - FAL_MCP_PORT=8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/sse').read()"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - fal-network
+
+  # Dual Transport Server (both STDIO and HTTP)
+  # Uncomment to use dual mode
+  # fal-mcp-dual:
+  #   image: ghcr.io/raveenb/fal-mcp-server:latest
+  #   container_name: fal-mcp-dual
+  #   environment:
+  #     - FAL_KEY=${FAL_KEY}
+  #     - FAL_MCP_TRANSPORT=dual
+  #     - FAL_MCP_HOST=0.0.0.0
+  #     - FAL_MCP_PORT=8081
+  #   ports:
+  #     - "8081:8081"
+  #   stdin_open: true
+  #   tty: true
+  #   restart: unless-stopped
+  #   networks:
+  #     - fal-network
+
+  # STDIO Only Server
+  # Uncomment for STDIO mode (useful for debugging)
+  # fal-mcp-stdio:
+  #   image: ghcr.io/raveenb/fal-mcp-server:latest
+  #   container_name: fal-mcp-stdio
+  #   environment:
+  #     - FAL_KEY=${FAL_KEY}
+  #     - FAL_MCP_TRANSPORT=stdio
+  #   stdin_open: true
+  #   tty: true
+  #   restart: unless-stopped
+  #   networks:
+  #     - fal-network
+
+networks:
+  fal-network:
+    driver: bridge
+
+# Example .env file content:
+# FAL_KEY=your-fal-api-key-here
+
+# Usage:
+# 1. Create .env file with FAL_KEY
+# 2. Run: docker-compose up -d
+# 3. Access: http://localhost:8080/sse
+
+# Build locally:
+# docker-compose build
+
+# View logs:
+# docker-compose logs -f fal-mcp-http
+
+# Stop services:
+# docker-compose down
