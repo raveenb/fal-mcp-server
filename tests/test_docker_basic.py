@@ -1,7 +1,6 @@
 """Basic Docker tests that work in CI environment"""
 
 import os
-import pytest
 
 
 def test_dockerfile_exists():
