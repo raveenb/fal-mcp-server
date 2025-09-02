@@ -331,11 +331,12 @@ class FalMCPServer:
                     self.get_initialization_options(),
                 )
 
-            # Return empty response to avoid NoneType error
-            return Response()
+            # Return empty response to avoid NoneType error (type: ignore needed for ASGI)
 
         # Convert handle_sse to a Starlette endpoint
-        async def sse_endpoint(request):
+        from starlette.requests import Request
+        
+        async def sse_endpoint(request: Request) -> Response:
             """Starlette endpoint wrapper for SSE handler"""
             await handle_sse(request.scope, request.receive, request._send)
             return Response()
@@ -371,7 +372,7 @@ class FalMCPServer:
         app = self.create_http_app(host, port)
 
         # Run HTTP server in a separate thread
-        def run_http_server():
+        def run_http_server() -> None:
             uvicorn.run(app, host=host, port=port, log_level="info")
 
         http_thread = threading.Thread(target=run_http_server, daemon=True)
