@@ -40,6 +40,10 @@ jobs:
       run: |
         pytest tests/ -v --asyncio-mode=auto --cov=src/fal_mcp_server --cov-report=term-missing
     
+    - name: Test documentation
+      run: |
+        pytest tests/test_docs.py -v
+    
     - name: Type check with mypy
       run: |
         mypy src/

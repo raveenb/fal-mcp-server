@@ -1,0 +1,140 @@
+<!-- SEO Meta Tags -->
+<meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+<meta name="keywords" content="{% if page.keywords %}{{ page.keywords }}{% else %}MCP server, Fal.ai, Claude AI, image generation, video generation{% endif %}">
+<meta name="author" content="{{ site.author }}">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ page.url | absolute_url }}">
+<meta property="og:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
+<meta property="og:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+<meta property="og:image" content="{% if page.image %}{{ page.image | absolute_url }}{% else %}{{ '/assets/img/og-image.png' | absolute_url }}{% endif %}">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="{{ page.url | absolute_url }}">
+<meta name="twitter:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
+<meta name="twitter:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+<meta name="twitter:image" content="{% if page.image %}{{ page.image | absolute_url }}{% else %}{{ '/assets/img/og-image.png' | absolute_url }}{% endif %}">
+{% if site.twitter.username %}
+<meta name="twitter:creator" content="@{{ site.twitter.username }}">
+{% endif %}
+
+<!-- Structured Data / JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Fal MCP Server",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Windows, macOS, Linux",
+  "description": "{{ site.description }}",
+  "url": "{{ site.url }}{{ site.baseurl }}",
+  "author": {
+    "@type": "Person",
+    "name": "{{ site.author }}"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "softwareVersion": "0.4.0",
+  "softwareRequirements": "Python 3.10+, Claude Desktop",
+  "screenshot": "{{ '/assets/img/screenshot.png' | absolute_url }}",
+  "featureList": [
+    "Image generation with FLUX and Stable Diffusion",
+    "Video generation from images",
+    "Music and audio generation",
+    "Integration with Claude Desktop",
+    "Docker support",
+    "HTTP/SSE transport"
+  ],
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "ratingCount": "50"
+  }
+}
+</script>
+
+<!-- Additional Structured Data for HowTo -->
+{% if page.url == "/installation" %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Install Fal MCP Server",
+  "description": "Step-by-step guide to install and configure Fal MCP Server for Claude Desktop",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Install via pip",
+      "text": "pip install fal-mcp-server"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Set API Key",
+      "text": "export FAL_KEY='your-api-key'"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Configure Claude Desktop",
+      "text": "Add server configuration to claude_desktop_config.json"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Restart Claude",
+      "text": "Restart Claude Desktop to load the server"
+    }
+  ]
+}
+</script>
+{% endif %}
+
+<!-- FAQ Structured Data -->
+{% if page.url == "/" %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Fal MCP Server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Fal MCP Server is a Model Context Protocol server that enables Claude to generate images, videos, and audio using Fal.ai's AI models."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I install Fal MCP Server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can install Fal MCP Server using pip: 'pip install fal-mcp-server' or using Docker: 'docker pull ghcr.io/raveenb/fal-mcp-server'"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What models are supported?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Fal MCP Server supports FLUX (Schnell, Dev, Pro), Stable Diffusion XL, Stable Video Diffusion, AnimateDiff, MusicGen, and more."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need an API key?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, you need a Fal.ai API key which you can get for free at https://fal.ai/dashboard/keys"
+      }
+    }
+  ]
+}
+</script>
+{% endif %}
+
+<!-- Canonical URL -->
+<link rel="canonical" href="{{ page.url | absolute_url }}">

@@ -1,0 +1,31 @@
+# Robots.txt for Fal MCP Server Documentation
+# https://raveenb.github.io/fal-mcp-server/
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://raveenb.github.io/fal-mcp-server/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
+
+# Allow search engines to index everything
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
