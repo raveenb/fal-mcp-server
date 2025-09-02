@@ -107,11 +107,17 @@ export FAL_KEY="your-api-key"
 fal-mcp
 ```
 
-Or use Docker:
+Or use our official Docker image from GitHub Container Registry:
 
 ```bash
-docker run -e FAL_KEY=your-key -p 8080:8080 ghcr.io/raveenb/fal-mcp-server
+# Pull from GitHub Packages
+docker pull ghcr.io/raveenb/fal-mcp-server:latest
+
+# Run with your API key
+docker run -e FAL_KEY=your-key -p 8080:8080 ghcr.io/raveenb/fal-mcp-server:latest
 ```
+
+[![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue?logo=docker)](https://github.com/raveenb/fal-mcp-server/pkgs/container/fal-mcp-server)
 
 [Full Installation Guide →]({{ '/installation' | relative_url }})
 
@@ -192,8 +198,8 @@ Fal MCP Server seamlessly integrates with Claude Desktop through the Model Conte
   
   <div class="deployment-option">
     <h3>Docker Container</h3>
-    <code>docker-compose up</code>
-    <p>Isolated, reproducible deployments</p>
+    <code>docker pull ghcr.io/raveenb/fal-mcp-server</code>
+    <p>Official image on GitHub Packages</p>
   </div>
   
   <div class="deployment-option">

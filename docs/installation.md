@@ -44,18 +44,32 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv pip install fal-mcp-server
 ```
 
-### Method 3: Docker Installation
+### Method 3: Docker Installation (Recommended for Production)
+
+**✅ Docker image is now available on GitHub Container Registry!**
 
 For isolated, reproducible deployments:
 
 ```bash
-# Pull the Docker image
+# Pull the official Docker image from GitHub Packages
 docker pull ghcr.io/raveenb/fal-mcp-server:latest
+
+# Run with your API key
+docker run -d \
+  --name fal-mcp \
+  -e FAL_KEY=your-api-key \
+  -p 8080:8080 \
+  ghcr.io/raveenb/fal-mcp-server:latest
 
 # Or use docker-compose
 curl -O https://raw.githubusercontent.com/raveenb/fal-mcp-server/main/docker-compose.yml
 docker-compose up -d
 ```
+
+**Available Docker tags:**
+- `latest` - Most recent stable release
+- `v0.3.0`, `v0.2.0`, etc. - Specific versions
+- `main` - Latest development build
 
 ### Method 4: Install from Source
 
@@ -183,13 +197,32 @@ docker-compose up -d
 
 ### Using Docker Run
 
+**The official Docker image is available on GitHub Container Registry!**
+
 ```bash
+# Pull the latest image (updated regularly)
+docker pull ghcr.io/raveenb/fal-mcp-server:latest
+
+# Run the container
 docker run -d \
   --name fal-mcp \
   -e FAL_KEY=your-api-key \
   -p 8080:8080 \
   ghcr.io/raveenb/fal-mcp-server:latest
+
+# Verify it's running
+docker ps | grep fal-mcp
+
+# Check logs
+docker logs fal-mcp
 ```
+
+**Docker Image Features:**
+- 🔒 Non-root user for security
+- 📦 Multi-stage build (optimized size ~150MB)
+- 🚀 Pre-configured for production use
+- ♻️ Automatic updates with CI/CD
+- 🏷️ Tagged releases for version pinning
 
 ## Verification
 
