@@ -34,21 +34,22 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 
 ### Installation
 
-#### Option 1: Using uv (Recommended)
+#### Option 1: Install from PyPI (Recommended)
 
 ```bash
-git clone https://github.com/raveenb/fal-mcp-server.git
-cd fal-mcp-server
-uv pip install -e .
+pip install fal-mcp-server
 ```
 
-#### Option 2: Using pip
+Or with uv:
+```bash
+uv pip install fal-mcp-server
+```
+
+#### Option 2: Install from source
 
 ```bash
 git clone https://github.com/raveenb/fal-mcp-server.git
 cd fal-mcp-server
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
@@ -60,20 +61,28 @@ pip install -e .
    - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
+#### For PyPI Installation:
 ```json
 {
   "mcpServers": {
     "fal-ai": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "mcp",
-        "--with",
-        "fal-client",
-        "python",
-        "/path/to/fal-mcp-server/src/fal_mcp_server/server.py"
-      ],
+      "command": "python",
+      "args": ["-m", "fal_mcp_server.server"],
+      "env": {
+        "FAL_KEY": "your-fal-api-key"
+      }
+    }
+  }
+}
+```
+
+#### For Source Installation:
+```json
+{
+  "mcpServers": {
+    "fal-ai": {
+      "command": "python",
+      "args": ["/path/to/fal-mcp-server/src/fal_mcp_server/server.py"],
       "env": {
         "FAL_KEY": "your-fal-api-key"
       }
