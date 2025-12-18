@@ -56,10 +56,31 @@ Official Docker image available on GitHub Container Registry:
 # Pull the latest image
 docker pull ghcr.io/raveenb/fal-mcp-server:latest
 
-# Run with your API key
+# Run with your API key (uses sensible defaults)
 docker run -d \
   --name fal-mcp \
   -e FAL_KEY=your-api-key \
+  -p 8080:8080 \
+  ghcr.io/raveenb/fal-mcp-server:latest
+```
+
+**Docker Environment Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FAL_KEY` | (required) | Your Fal.ai API key |
+| `FAL_MCP_TRANSPORT` | `http` | Transport mode: `http`, `stdio`, or `dual` |
+| `FAL_MCP_HOST` | `0.0.0.0` | Host to bind the server to |
+| `FAL_MCP_PORT` | `8080` | Port for the HTTP server |
+
+```bash
+# Example with custom configuration
+docker run -d \
+  --name fal-mcp \
+  -e FAL_KEY=your-api-key \
+  -e FAL_MCP_TRANSPORT=http \
+  -e FAL_MCP_HOST=0.0.0.0 \
+  -e FAL_MCP_PORT=8080 \
   -p 8080:8080 \
   ghcr.io/raveenb/fal-mcp-server:latest
 ```
