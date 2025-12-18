@@ -3,14 +3,15 @@
 
 import argparse
 import asyncio
-import logging
 import os
+import sys
 import threading
 from typing import Any, Dict, List
 
 import fal_client
 import mcp.server.stdio
 import uvicorn
+from loguru import logger
 
 # MCP imports
 from mcp.server import Server
@@ -29,10 +30,6 @@ from starlette.types import Receive, Scope, Send
 
 # Model registry for dynamic model discovery
 from fal_mcp_server.model_registry import get_registry
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Configure Fal client
 if api_key := os.getenv("FAL_KEY"):
@@ -355,6 +352,9 @@ class FalMCPServer:
                 ]
 
             except Exception as e:
+                logger.exception(
+                    "Error executing tool {} with arguments {}", name, arguments
+                )
                 error_msg = f"❌ Error executing {name}: {str(e)}"
                 if "FAL_KEY" not in os.environ:
                     error_msg += "\n⚠️ FAL_KEY environment variable not set!"
@@ -480,11 +480,9 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Configure logging
-    logging.basicConfig(
-        level=getattr(logging, args.log_level),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
+    # Configure loguru
+    logger.remove()  # Remove default handler
+    logger.add(sys.stderr, level=args.log_level)
 
     # Check for FAL_KEY
     if "FAL_KEY" not in os.environ:

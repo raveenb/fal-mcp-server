@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, cast
 # Fal client
 import fal_client
 import mcp.server.stdio
+from loguru import logger
 
 # MCP imports
 from mcp.server import Server
@@ -386,6 +387,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         ]
 
     except Exception as e:
+        logger.exception("Error executing tool %s with arguments %s", name, arguments)
         error_msg = f"❌ Error executing {name}: {str(e)}"
         if "FAL_KEY" not in os.environ:
             error_msg += "\n⚠️ FAL_KEY environment variable not set!"

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import httpx
+from loguru import logger
 
 
 @dataclass
@@ -95,8 +96,14 @@ class ModelRegistry:
         """Get or create HTTP client."""
         if self._http_client is None:
             headers = {"Content-Type": "application/json"}
-            if api_key := os.getenv("FAL_KEY"):
+            api_key = os.getenv("FAL_KEY")
+            if api_key:
                 headers["Authorization"] = f"Key {api_key}"
+            else:
+                logger.warning(
+                    "FAL_KEY environment variable not set - "
+                    "model registry API calls may fail with 401 Unauthorized"
+                )
             self._http_client = httpx.AsyncClient(
                 base_url=self.FAL_API_BASE, headers=headers, timeout=30.0
             )
@@ -118,7 +125,8 @@ class ModelRegistry:
 
         response = await client.get("/models", params=params)
         response.raise_for_status()
-        return response.json()
+        data: Dict[str, Any] = response.json()
+        return data
 
     async def _fetch_all_models(
         self, category: Optional[str] = None
@@ -202,14 +210,45 @@ class ModelRegistry:
             if not self._is_cache_valid():
                 try:
                     self._cache = await self._refresh_cache()
-                except Exception:
-                    # If refresh fails and we have stale cache, use it
-                    if self._cache is not None:
-                        pass  # Use stale cache
-                    else:
-                        # Create minimal cache with legacy aliases
-                        self._cache = self._create_fallback_cache()
+                    logger.info(
+                        "Model cache refreshed: %d models, %d aliases",
+                        len(self._cache.models),
+                        len(self._cache.aliases),
+                    )
+                except httpx.HTTPStatusError as e:
+                    logger.error(
+                        "Failed to refresh model cache: HTTP %d - %s",
+                        e.response.status_code,
+                        str(e),
+                    )
+                    self._handle_cache_refresh_failure()
+                except httpx.TimeoutException as e:
+                    logger.error("Timeout refreshing model cache: %s", e)
+                    self._handle_cache_refresh_failure()
+                except httpx.ConnectError as e:
+                    logger.error("Connection error refreshing model cache: %s", e)
+                    self._handle_cache_refresh_failure()
+                except Exception as e:
+                    logger.exception("Unexpected error refreshing model cache: %s", e)
+                    self._handle_cache_refresh_failure()
+            assert (
+                self._cache is not None
+            )  # Guaranteed by _handle_cache_refresh_failure
             return self._cache
+
+    def _handle_cache_refresh_failure(self) -> None:
+        """Handle cache refresh failure by using stale cache or creating fallback."""
+        if self._cache is not None:
+            cache_age = time.time() - self._cache.fetched_at
+            logger.warning(
+                "Using stale cache (age: %.0fs) due to refresh failure", cache_age
+            )
+        else:
+            logger.warning(
+                "Creating fallback cache with legacy aliases only - "
+                "dynamic model discovery unavailable"
+            )
+            self._cache = self._create_fallback_cache()
 
     def _create_fallback_cache(self) -> ModelCache:
         """Create a fallback cache with just legacy aliases."""
