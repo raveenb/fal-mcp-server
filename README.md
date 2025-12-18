@@ -25,12 +25,18 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 
 ### 🎨 Media Generation
 - 🖼️ **Image Generation** - Create images using Flux, SDXL, and other models
-- 🎬 **Video Generation** - Generate videos from images or text prompts  
+- 🎬 **Video Generation** - Generate videos from images or text prompts
 - 🎵 **Music Generation** - Create music from text descriptions
 - 🗣️ **Text-to-Speech** - Convert text to natural speech
 - 📝 **Audio Transcription** - Transcribe audio using Whisper
 - ⬆️ **Image Upscaling** - Enhance image resolution
 - 🔄 **Image-to-Image** - Transform existing images with prompts
+
+### 🔍 Dynamic Model Discovery (New!)
+- **600+ Models** - Access all models available on Fal.ai platform
+- **Auto-Discovery** - Models are fetched dynamically from the Fal.ai API
+- **Smart Caching** - TTL-based cache for optimal performance
+- **Flexible Input** - Use full model IDs or friendly aliases
 
 ## 🚀 Quick Start
 
@@ -143,10 +149,31 @@ pip install -e .
 Once configured, ask Claude to:
 
 - "Generate an image of a sunset"
-- "Create a video from this image"  
+- "Create a video from this image"
 - "Generate 30 seconds of ambient music"
 - "Convert this text to speech"
 - "Transcribe this audio file"
+
+### Discovering Available Models
+
+Use the `list_models` tool to discover available models:
+
+- "What image models are available?"
+- "List video generation models"
+- "Search for flux models"
+
+### Using Any Fal.ai Model
+
+You can use any model from the Fal.ai platform:
+
+```
+# Using a friendly alias (backward compatible)
+"Generate an image with flux_schnell"
+
+# Using a full model ID (new capability)
+"Generate an image using fal-ai/flux-pro/v1.1-ultra"
+"Create a video with fal-ai/kling-video/v1.5/pro"
+```
 
 ### HTTP/SSE Transport (New!)
 
@@ -171,19 +198,44 @@ See [Docker Documentation](docs/docker.md) and [HTTP Transport Documentation](do
 
 ## 📦 Supported Models
 
-### Image Models
-- `flux_schnell` - Fast high-quality generation
-- `flux_dev` - Development version with more control
-- `sdxl` - Stable Diffusion XL
+This server supports **600+ models** from the Fal.ai platform through dynamic discovery. Use the `list_models` tool to explore available models, or use any model ID directly.
 
-### Video Models
-- `svd` - Stable Video Diffusion
-- `animatediff` - Text-to-video animation
+### Popular Aliases (Quick Reference)
 
-### Audio Models
-- `musicgen` - Music generation
-- `bark` - Text-to-speech
-- `whisper` - Audio transcription
+These friendly aliases are always available for commonly used models:
+
+| Alias | Model ID | Type |
+|-------|----------|------|
+| `flux_schnell` | `fal-ai/flux/schnell` | Image |
+| `flux_dev` | `fal-ai/flux/dev` | Image |
+| `flux_pro` | `fal-ai/flux-pro` | Image |
+| `sdxl` | `fal-ai/fast-sdxl` | Image |
+| `stable_diffusion` | `fal-ai/stable-diffusion-v3-medium` | Image |
+| `svd` | `fal-ai/stable-video-diffusion` | Video |
+| `animatediff` | `fal-ai/fast-animatediff` | Video |
+| `kling` | `fal-ai/kling-video` | Video |
+| `musicgen` | `fal-ai/musicgen-medium` | Audio |
+| `musicgen_large` | `fal-ai/musicgen-large` | Audio |
+| `bark` | `fal-ai/bark` | Audio |
+| `whisper` | `fal-ai/whisper` | Audio |
+
+### Using Full Model IDs
+
+You can also use any model directly by its full ID:
+
+```python
+# Examples of full model IDs
+"fal-ai/flux-pro/v1.1-ultra"      # Latest Flux Pro
+"fal-ai/kling-video/v1.5/pro"     # Kling Video Pro
+"fal-ai/hunyuan-video"            # Hunyuan Video
+"fal-ai/minimax-video"            # MiniMax Video
+```
+
+Use `list_models` with category filters to discover more:
+- `list_models(category="image")` - All image generation models
+- `list_models(category="video")` - All video generation models
+- `list_models(category="audio")` - All audio models
+- `list_models(search="flux")` - Search for specific models
 
 ## 🤝 Contributing
 
