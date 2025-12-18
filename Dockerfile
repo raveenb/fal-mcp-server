@@ -60,10 +60,11 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Default command - runs dual transport server
 # Can be overridden for specific transport modes
-CMD ["python", "-m", "fal_mcp_server.server_dual", \
-     "--transport", "${FAL_MCP_TRANSPORT}", \
-     "--host", "${FAL_MCP_HOST}", \
-     "--port", "${FAL_MCP_PORT}"]
+# Uses shell form to enable environment variable expansion
+CMD python -m fal_mcp_server.server_dual \
+    --transport "$FAL_MCP_TRANSPORT" \
+    --host "$FAL_MCP_HOST" \
+    --port "$FAL_MCP_PORT"
 
 # Alternative commands (examples):
 # For HTTP only:
