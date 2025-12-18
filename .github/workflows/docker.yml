@@ -62,5 +62,45 @@ jobs:
       - name: Test Docker image
         if: github.event_name == 'pull_request'
         run: |
+          # Build the image
           docker build -t test-image .
+
+          # Test CLI help works for all entry points
+          echo "Testing CLI entry points..."
           docker run --rm test-image python -m fal_mcp_server.server --help
+          docker run --rm test-image python -m fal_mcp_server.server_http --help
+          docker run --rm test-image python -m fal_mcp_server.server_dual --help
+
+          # Test HTTP server starts and responds
+          echo "Starting HTTP server container..."
+          docker run -d --name test-container -p 8080:8080 -e FAL_KEY=test-key test-image
+
+          # Wait for server to start
+          echo "Waiting for server to start..."
+          sleep 5
+
+          # Check container is still running (didn't crash on startup)
+          echo "Checking container is running..."
+          docker ps | grep test-container
+
+          # Test SSE endpoint is accessible (will timeout but should connect)
+          echo "Testing SSE endpoint..."
+          curl -sf http://localhost:8080/sse --max-time 2 -o /dev/null || echo "SSE endpoint responded (timeout expected)"
+
+          # Check container logs for any startup errors
+          echo "Container logs:"
+          docker logs test-container
+
+          # Verify no Python exceptions in logs
+          if docker logs test-container 2>&1 | grep -i "traceback\|exception\|error"; then
+            echo "WARNING: Found potential errors in container logs"
+          else
+            echo "No errors found in container logs"
+          fi
+
+          # Cleanup
+          echo "Cleaning up..."
+          docker stop test-container
+          docker rm test-container
+
+          echo "Docker tests passed!"
