@@ -1,19 +1,44 @@
 {
   "mcpServers": {
     "context7": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@context7/mcp-server"],
-      "description": "Library documentation retrieval server"
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {}
     },
-    "memory-bank": {
+    "playwright": {
       "command": "npx",
-      "args": ["-y", "@memory-bank/mcp-server"],
-      "description": "Memory bank for project context and decision tracking"
+      "args": ["@playwright/mcp@latest"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "env": {
+        "MEMORY_FILE_PATH": "${CLAUDE_PROJECT_DIR}/.server-memory/memory.json"
+      }
+    },
+    "allpepper-memory-bank": {
+      "command": "npx",
+      "args": ["-y", "@allpepper/memory-bank-mcp"],
+      "env": {
+        "MEMORY_BANK_ROOT": "${CLAUDE_PROJECT_DIR}/.memory-bank"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "memory_bank_read",
+        "memory_bank_write",
+        "memory_bank_update",
+        "list_projects",
+        "list_project_files"
+      ]
     },
     "sequential-thinking": {
       "command": "npx",
-      "args": ["-y", "@sequential-thinking/mcp-server"],
-      "description": "Sequential thinking tool for complex problem solving"
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     }
   }
 }
+
