@@ -11,6 +11,10 @@
 
 A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP clients) to generate images, videos, music, and audio using [Fal.ai](https://fal.ai) models.
 
+<a href="https://glama.ai/mcp/servers/@raveenb/fal-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@raveenb/fal-mcp-server/badge" alt="Fal.ai Server MCP server" />
+</a>
+
 ## ✨ Features
 
 ### 🚀 Performance
