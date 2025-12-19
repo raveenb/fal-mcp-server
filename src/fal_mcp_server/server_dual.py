@@ -3,14 +3,15 @@
 
 import argparse
 import asyncio
-import logging
 import os
+import sys
 import threading
 from typing import Any, Dict, List
 
 import fal_client
 import mcp.server.stdio
 import uvicorn
+from loguru import logger
 
 # MCP imports
 from mcp.server import Server
@@ -27,35 +28,12 @@ from starlette.responses import Response
 from starlette.routing import Mount, Route
 from starlette.types import Receive, Scope, Send
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Model registry for dynamic model discovery
+from fal_mcp_server.model_registry import get_registry
 
 # Configure Fal client
 if api_key := os.getenv("FAL_KEY"):
     os.environ["FAL_KEY"] = api_key
-
-# Model configurations (shared across both transports)
-MODELS = {
-    "image": {
-        "flux_schnell": "fal-ai/flux/schnell",
-        "flux_dev": "fal-ai/flux/dev",
-        "flux_pro": "fal-ai/flux-pro",
-        "sdxl": "fal-ai/fast-sdxl",
-        "stable_diffusion": "fal-ai/stable-diffusion-v3-medium",
-    },
-    "video": {
-        "svd": "fal-ai/stable-video-diffusion",
-        "animatediff": "fal-ai/fast-animatediff",
-        "kling": "fal-ai/kling-video",
-    },
-    "audio": {
-        "musicgen": "fal-ai/musicgen-medium",
-        "musicgen_large": "fal-ai/musicgen-large",
-        "bark": "fal-ai/bark",
-        "whisper": "fal-ai/whisper",
-    },
-}
 
 
 class FalMCPServer:
@@ -74,8 +52,34 @@ class FalMCPServer:
             """List all available Fal.ai tools"""
             return [
                 Tool(
+                    name="list_models",
+                    description="Discover available Fal.ai models for image, video, and audio generation. Use this to find model IDs for generate_* tools.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "category": {
+                                "type": "string",
+                                "enum": ["image", "video", "audio"],
+                                "description": "Filter by category (image, video, or audio)",
+                            },
+                            "search": {
+                                "type": "string",
+                                "description": "Search query to filter models by name or description (e.g., 'flux', 'stable diffusion')",
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "default": 20,
+                                "minimum": 1,
+                                "maximum": 100,
+                                "description": "Maximum number of models to return",
+                            },
+                        },
+                        "required": [],
+                    },
+                ),
+                Tool(
                     name="generate_image",
-                    description="Generate images from text prompts using various models",
+                    description="Generate images from text prompts. Use list_models with category='image' to discover available models.",
                     inputSchema={
                         "type": "object",
                         "properties": {
@@ -85,9 +89,8 @@ class FalMCPServer:
                             },
                             "model": {
                                 "type": "string",
-                                "enum": list(MODELS["image"].keys()),
                                 "default": "flux_schnell",
-                                "description": "Model to use for generation",
+                                "description": "Model ID (e.g., 'fal-ai/flux-pro') or alias (e.g., 'flux_schnell'). Use list_models to see options.",
                             },
                             "negative_prompt": {
                                 "type": "string",
@@ -120,7 +123,7 @@ class FalMCPServer:
                 ),
                 Tool(
                     name="generate_video",
-                    description="Generate videos from images",
+                    description="Generate videos from images. Use list_models with category='video' to discover available models.",
                     inputSchema={
                         "type": "object",
                         "properties": {
@@ -130,9 +133,8 @@ class FalMCPServer:
                             },
                             "model": {
                                 "type": "string",
-                                "enum": list(MODELS["video"].keys()),
                                 "default": "svd",
-                                "description": "Video generation model",
+                                "description": "Model ID (e.g., 'fal-ai/kling-video') or alias (e.g., 'svd'). Use list_models to see options.",
                             },
                             "duration": {
                                 "type": "integer",
@@ -147,7 +149,7 @@ class FalMCPServer:
                 ),
                 Tool(
                     name="generate_music",
-                    description="Generate music from text descriptions",
+                    description="Generate music from text descriptions. Use list_models with category='audio' to discover available models.",
                     inputSchema={
                         "type": "object",
                         "properties": {
@@ -164,9 +166,8 @@ class FalMCPServer:
                             },
                             "model": {
                                 "type": "string",
-                                "enum": ["musicgen", "musicgen_large"],
                                 "default": "musicgen",
-                                "description": "Music generation model",
+                                "description": "Model ID (e.g., 'fal-ai/musicgen-large') or alias (e.g., 'musicgen'). Use list_models to see options.",
                             },
                         },
                         "required": ["prompt"],
@@ -179,10 +180,54 @@ class FalMCPServer:
             """Execute a Fal.ai tool"""
 
             try:
+                # Get the model registry
+                registry = await get_registry()
+
+                # List models tool
+                if name == "list_models":
+                    models = await registry.list_models(
+                        category=arguments.get("category"),
+                        search=arguments.get("search"),
+                        limit=arguments.get("limit", 20),
+                    )
+
+                    if not models:
+                        return [
+                            TextContent(
+                                type="text",
+                                text="No models found. Try a different category or search term.",
+                            )
+                        ]
+
+                    # Format output
+                    lines = [f"## Available Models ({len(models)} found)\n"]
+
+                    for model in models:
+                        lines.append(f"- `{model.id}`")
+                        if model.name and model.name != model.id:
+                            lines.append(f"  - **{model.name}**")
+                        if model.description:
+                            desc = (
+                                model.description[:150] + "..."
+                                if len(model.description) > 150
+                                else model.description
+                            )
+                            lines.append(f"  - {desc}")
+
+                    return [TextContent(type="text", text="\n".join(lines))]
+
                 # Fast operations using async API
                 if name == "generate_image":
-                    model_key = arguments.get("model", "flux_schnell")
-                    model_id = MODELS["image"][model_key]
+                    model_input = arguments.get("model", "flux_schnell")
+                    try:
+                        model_id = await registry.resolve_model_id(model_input)
+                    except ValueError as e:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ {e}. Use list_models to see available options.",
+                            )
+                        ]
 
                     fal_args = {
                         "prompt": arguments["prompt"],
@@ -203,7 +248,7 @@ class FalMCPServer:
                     if images:
                         urls = [img["url"] for img in images]
                         response = (
-                            f"🎨 Generated {len(urls)} image(s) with {model_key}:\n\n"
+                            f"🎨 Generated {len(urls)} image(s) with {model_id}:\n\n"
                         )
                         for i, url in enumerate(urls, 1):
                             response += f"Image {i}: {url}\n"
@@ -211,8 +256,16 @@ class FalMCPServer:
 
                 # Long operations using queue API
                 elif name == "generate_video":
-                    model_key = arguments.get("model", "svd")
-                    model_id = MODELS["video"][model_key]
+                    model_input = arguments.get("model", "svd")
+                    try:
+                        model_id = await registry.resolve_model_id(model_input)
+                    except ValueError as e:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ {e}. Use list_models to see available options.",
+                            )
+                        ]
 
                     fal_args = {"image_url": arguments["image_url"]}
                     if "duration" in arguments:
@@ -241,13 +294,21 @@ class FalMCPServer:
                             return [
                                 TextContent(
                                     type="text",
-                                    text=f"🎬 Video generated: {video_url}",
+                                    text=f"🎬 Video generated with {model_id}: {video_url}",
                                 )
                             ]
 
                 elif name == "generate_music":
-                    model_key = arguments.get("model", "musicgen")
-                    model_id = MODELS["audio"][model_key]
+                    model_input = arguments.get("model", "musicgen")
+                    try:
+                        model_id = await registry.resolve_model_id(model_input)
+                    except ValueError as e:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ {e}. Use list_models to see available options.",
+                            )
+                        ]
 
                     # Submit to queue for longer music generation
                     handle = await fal_client.submit_async(
@@ -279,7 +340,7 @@ class FalMCPServer:
                             return [
                                 TextContent(
                                     type="text",
-                                    text=f"🎵 Generated {duration}s of music: {audio_url}",
+                                    text=f"🎵 Generated {duration}s of music with {model_id}: {audio_url}",
                                 )
                             ]
 
@@ -291,6 +352,9 @@ class FalMCPServer:
                 ]
 
             except Exception as e:
+                logger.exception(
+                    "Error executing tool {} with arguments {}", name, arguments
+                )
                 error_msg = f"❌ Error executing {name}: {str(e)}"
                 if "FAL_KEY" not in os.environ:
                     error_msg += "\n⚠️ FAL_KEY environment variable not set!"
@@ -416,11 +480,9 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Configure logging
-    logging.basicConfig(
-        level=getattr(logging, args.log_level),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
+    # Configure loguru
+    logger.remove()  # Remove default handler
+    logger.add(sys.stderr, level=args.log_level)
 
     # Check for FAL_KEY
     if "FAL_KEY" not in os.environ:

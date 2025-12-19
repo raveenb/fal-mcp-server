@@ -73,22 +73,21 @@ async def test_server_tools_registration():
 
 
 def test_models_configuration_in_http():
-    """Test that model configurations are available in HTTP server"""
-    from fal_mcp_server.server_http import MODELS
+    """Test that model registry is used by HTTP server"""
+    from fal_mcp_server.model_registry import ModelRegistry
 
-    # Check image models
-    assert "image" in MODELS
-    assert "flux_schnell" in MODELS["image"]
-    assert "flux_dev" in MODELS["image"]
+    registry = ModelRegistry()
 
-    # Check video models
-    assert "video" in MODELS
-    assert "svd" in MODELS["video"]
+    # Check image model aliases
+    assert "flux_schnell" in registry.LEGACY_ALIASES
+    assert "flux_dev" in registry.LEGACY_ALIASES
 
-    # Check audio models
-    assert "audio" in MODELS
-    assert "musicgen" in MODELS["audio"]
-    assert "whisper" in MODELS["audio"]
+    # Check video model aliases
+    assert "svd" in registry.LEGACY_ALIASES
+
+    # Check audio model aliases
+    assert "musicgen" in registry.LEGACY_ALIASES
+    assert "whisper" in registry.LEGACY_ALIASES
 
 
 def test_transport_environment_variables():

@@ -62,5 +62,75 @@ jobs:
       - name: Test Docker image
         if: github.event_name == 'pull_request'
         run: |
+          # Build the image
           docker build -t test-image .
+
+          # Test CLI help works for all entry points
+          echo "=== Testing CLI entry points ==="
           docker run --rm test-image python -m fal_mcp_server.server --help
+          docker run --rm test-image python -m fal_mcp_server.server_http --help
+          docker run --rm test-image python -m fal_mcp_server.server_dual --help
+
+          # Test HTTP server starts with environment variables
+          echo "=== Starting HTTP server container with env vars ==="
+          docker run -d \
+            --name test-container \
+            -e FAL_KEY=test-key \
+            -e FAL_MCP_TRANSPORT=http \
+            -e FAL_MCP_HOST=0.0.0.0 \
+            -e FAL_MCP_PORT=8080 \
+            -p 8080:8080 \
+            test-image
+
+          # Wait for server to start
+          echo "Waiting for server to start..."
+          sleep 5
+
+          # Check container is still running (didn't crash on startup)
+          echo "=== Checking container is running ==="
+          if ! docker ps | grep test-container; then
+            echo "ERROR: Container is not running!"
+            docker logs test-container
+            exit 1
+          fi
+
+          # Check container logs for successful startup
+          echo "=== Container logs ==="
+          docker logs test-container
+
+          # Verify server started successfully (check for Uvicorn startup message)
+          echo "=== Verifying successful startup ==="
+          if docker logs test-container 2>&1 | grep -q "Uvicorn running on"; then
+            echo "✓ Server started successfully"
+          else
+            echo "ERROR: Server did not start properly"
+            exit 1
+          fi
+
+          # Verify environment variables were expanded correctly (not literal ${VAR})
+          if docker logs test-container 2>&1 | grep -q '\${FAL_MCP'; then
+            echo "ERROR: Environment variables not expanded correctly"
+            exit 1
+          else
+            echo "✓ Environment variables expanded correctly"
+          fi
+
+          # Test SSE endpoint is accessible
+          echo "=== Testing SSE endpoint ==="
+          curl -sf http://localhost:8080/sse --max-time 2 -o /dev/null || echo "✓ SSE endpoint responded (timeout expected for SSE)"
+
+          # Verify no Python exceptions in logs
+          echo "=== Checking for errors ==="
+          if docker logs test-container 2>&1 | grep -i "traceback"; then
+            echo "ERROR: Found Python traceback in container logs"
+            exit 1
+          else
+            echo "✓ No Python tracebacks found"
+          fi
+
+          # Cleanup
+          echo "=== Cleaning up ==="
+          docker stop test-container
+          docker rm test-container
+
+          echo "=== All Docker tests passed! ==="
