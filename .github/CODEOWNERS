@@ -1,0 +1,16 @@
+# CODEOWNERS - Automatic reviewer assignment
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files
+* @raveenb
+
+# Core server implementation
+/src/fal_mcp_server/ @raveenb
+
+# CI/CD and infrastructure
+/.github/ @raveenb
+/Dockerfile @raveenb
+
+# Documentation
+/README.md @raveenb
+/CLAUDE.md @raveenb
