@@ -7,7 +7,7 @@ ARG BUILD_DATE=unknown
 ARG VCS_REF=unknown
 
 # Stage 1: Builder
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e .
 
 # Stage 2: Runtime
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Re-declare build arguments (ARGs don't persist across FROM)
 ARG VERSION=dev
