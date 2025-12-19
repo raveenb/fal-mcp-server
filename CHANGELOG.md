@@ -2,6 +2,36 @@
 
 <!-- version list -->
 
+## v1.3.0 (2025-12-19)
+
+### Bug Fixes
+
+- Use PAT for release workflow to bypass branch protection
+  ([#25](https://github.com/raveenb/fal-mcp-server/pull/25),
+  [`2b4d503`](https://github.com/raveenb/fal-mcp-server/commit/2b4d503c7b5c8df1edfe886d9d0254fef54ddd5e))
+
+### Chores
+
+- Add .serena/ to gitignore
+  ([`cb2eb8b`](https://github.com/raveenb/fal-mcp-server/commit/cb2eb8bdeb65f9526bf5fd199a8fc049cfcf2214))
+
+- Update uv.lock for dependency upgrades ([#26](https://github.com/raveenb/fal-mcp-server/pull/26),
+  [`49da0c9`](https://github.com/raveenb/fal-mcp-server/commit/49da0c98a76598f2c5d455b0088b5c4b6ad1e59c))
+
+- Upgrade dependency minimum versions ([#26](https://github.com/raveenb/fal-mcp-server/pull/26),
+  [`49da0c9`](https://github.com/raveenb/fal-mcp-server/commit/49da0c98a76598f2c5d455b0088b5c4b6ad1e59c))
+
+### Continuous Integration
+
+- Add CODEOWNERS for automatic reviewer assignment
+  ([`ffb3074`](https://github.com/raveenb/fal-mcp-server/commit/ffb307497469e2b08ee21867049728e53ed36c0a))
+
+### Features
+
+- Add uvx support and fix PyPI publishing
+  ([`264d0af`](https://github.com/raveenb/fal-mcp-server/commit/264d0af36701d5c04c9c42c295d1403b3ddf70d0))
+
+
 ## v1.2.0 (2025-12-19)
 
 ### Bug Fixes
