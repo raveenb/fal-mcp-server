@@ -52,7 +52,36 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 
 ### Installation
 
-#### Option 1: Docker (Recommended for Production) 🐳
+#### Option 1: uvx (Recommended - Zero Install) ⚡
+
+Run directly without installation using [uv](https://docs.astral.sh/uv/):
+
+```bash
+# Run the MCP server directly
+uvx fal-mcp-server
+
+# Or with specific version
+uvx fal-mcp-server==1.2.0
+```
+
+**Claude Desktop Configuration for uvx:**
+```json
+{
+  "mcpServers": {
+    "fal-ai": {
+      "command": "uvx",
+      "args": ["fal-mcp-server"],
+      "env": {
+        "FAL_KEY": "your-fal-api-key"
+      }
+    }
+  }
+}
+```
+
+> **Note:** Install uv first: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+#### Option 2: Docker (Recommended for Production) 🐳
 
 Official Docker image available on GitHub Container Registry:
 
@@ -96,7 +125,7 @@ echo "FAL_KEY=your-api-key" > .env
 docker-compose up -d
 ```
 
-#### Option 2: Install from PyPI
+#### Option 3: Install from PyPI
 
 ```bash
 pip install fal-mcp-server
@@ -107,7 +136,7 @@ Or with uv:
 uv pip install fal-mcp-server
 ```
 
-#### Option 3: Install from source
+#### Option 4: Install from source
 
 ```bash
 git clone https://github.com/raveenb/fal-mcp-server.git
