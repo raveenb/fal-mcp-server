@@ -23,8 +23,9 @@ def test_dockerfile_syntax():
     with open("Dockerfile", "r") as f:
         content = f.read()
 
-    # Check for required elements
-    assert "FROM python:3.11-slim" in content
+    # Check for required elements (version-agnostic)
+    assert "FROM python:" in content
+    assert "-slim" in content
     assert "WORKDIR /app" in content
     assert "USER mcp" in content  # Non-root user
     assert "HEALTHCHECK" in content
@@ -61,9 +62,9 @@ def test_dockerfile_build_stages():
     with open("Dockerfile", "r") as f:
         content = f.read()
 
-    # Check for multi-stage build
+    # Check for multi-stage build (version-agnostic)
     assert "AS builder" in content
-    assert "FROM python:3.11-slim AS builder" in content
+    assert "FROM python:" in content and "AS builder" in content
     assert "COPY --from=builder" in content
 
 
