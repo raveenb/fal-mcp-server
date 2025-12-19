@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Only run on main branch
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog generation
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for skip-release marker
+        id: check_skip
+        run: |
+          # Safely check commit message for skip marker using git
+          if git log -1 --pretty=%B | grep -q '\[skip-release\]'; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Skipping release due to [skip-release] in commit message"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Python
+        if: steps.check_skip.outputs.skip != 'true'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.check_skip.outputs.skip != 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install python-semantic-release
+
+      - name: Configure Git
+        if: steps.check_skip.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Python Semantic Release
+        id: release
+        if: steps.check_skip.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Run semantic-release to determine if a release is needed
+          # This parses commit messages following Conventional Commits:
+          # - feat: -> minor version bump
+          # - fix: -> patch version bump
+          # - BREAKING CHANGE: -> major version bump
+
+          # Check what version would be released
+          NEW_VERSION=$(semantic-release version --print 2>/dev/null || echo "")
+
+          if [ -n "$NEW_VERSION" ]; then
+            echo "New version detected: $NEW_VERSION"
+            echo "new_release=true" >> $GITHUB_OUTPUT
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+            # Perform the release (bumps version, commits, tags, creates GH release)
+            semantic-release version
+            semantic-release publish
+          else
+            echo "No release needed based on commit messages"
+            echo "new_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Release summary
+        if: steps.release.outputs.new_release == 'true'
+        run: |
+          echo "## 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Released version: **${{ steps.release.outputs.new_version }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This will trigger:" >> $GITHUB_STEP_SUMMARY
+          echo "- PyPI publish workflow" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker versioned image build" >> $GITHUB_STEP_SUMMARY

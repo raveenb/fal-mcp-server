@@ -47,7 +47,24 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
+      - name: Extract version for build args
+        id: version
+        env:
+          GIT_REF: ${{ github.ref }}
+          GIT_REF_NAME: ${{ github.ref_name }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          # Extract version from tag (v1.2.3 -> 1.2.3) or use 'dev' for branches
+          if [[ "$GIT_REF" == refs/tags/v* ]]; then
+            VERSION="${GIT_REF_NAME#v}"  # Remove 'v' prefix
+          else
+            VERSION="dev-${GIT_SHA:0:7}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "vcs_ref=$GIT_SHA" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -56,6 +73,10 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            BUILD_DATE=${{ steps.version.outputs.build_date }}
+            VCS_REF=${{ steps.version.outputs.vcs_ref }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
@@ -127,6 +148,19 @@ jobs:
           else
             echo "✓ No Python tracebacks found"
           fi
+
+          # Verify version info is embedded in image
+          echo "=== Checking version info ==="
+          docker stop test-container
+          VERSION_INFO=$(docker run --rm test-image printenv FAL_MCP_VERSION)
+          if [ -n "$VERSION_INFO" ]; then
+            echo "✓ Version info embedded: $VERSION_INFO"
+          else
+            echo "WARNING: Version info not found (expected in tagged builds)"
+          fi
+
+          # Restart container for cleanup
+          docker start test-container
 
           # Cleanup
           echo "=== Cleaning up ==="

@@ -1,6 +1,11 @@
 # Multi-stage Dockerfile for Fal MCP Server
 # Supports both STDIO and HTTP/SSE transports
 
+# Build arguments for versioning
+ARG VERSION=dev
+ARG BUILD_DATE=unknown
+ARG VCS_REF=unknown
+
 # Stage 1: Builder
 FROM python:3.11-slim AS builder
 
@@ -25,6 +30,22 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Stage 2: Runtime
 FROM python:3.11-slim
 
+# Re-declare build arguments (ARGs don't persist across FROM)
+ARG VERSION=dev
+ARG BUILD_DATE=unknown
+ARG VCS_REF=unknown
+
+# OCI Image Labels for version metadata
+# These can be viewed with: docker inspect <image>
+LABEL org.opencontainers.image.title="Fal MCP Server" \
+      org.opencontainers.image.description="MCP server for Fal.ai - Generate images, videos, music and audio with AI models" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/raveenb/fal-mcp-server" \
+      org.opencontainers.image.url="https://github.com/raveenb/fal-mcp-server" \
+      org.opencontainers.image.licenses="MIT"
+
 # Create non-root user for security
 RUN useradd -m -u 1000 -s /bin/bash mcp && \
     mkdir -p /app && \
@@ -44,10 +65,12 @@ COPY --chown=mcp:mcp . .
 USER mcp
 
 # Environment variables with defaults
+# Note: VERSION is set from build arg for runtime access
 ENV FAL_KEY="" \
     FAL_MCP_TRANSPORT="http" \
     FAL_MCP_HOST="0.0.0.0" \
     FAL_MCP_PORT="8080" \
+    FAL_MCP_VERSION="${VERSION}" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
