@@ -5,9 +5,13 @@
 ARG VERSION=dev
 ARG BUILD_DATE=unknown
 ARG VCS_REF=unknown
+ARG PYTHON_VERSION=3.13
 
 # Stage 1: Builder
-FROM python:3.11-slim AS builder
+FROM python:${PYTHON_VERSION}-slim AS builder
+
+# Re-declare for use in this stage
+ARG PYTHON_VERSION
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -28,12 +32,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e .
 
 # Stage 2: Runtime
-FROM python:3.11-slim
+ARG PYTHON_VERSION=3.13
+FROM python:${PYTHON_VERSION}-slim
 
 # Re-declare build arguments (ARGs don't persist across FROM)
 ARG VERSION=dev
 ARG BUILD_DATE=unknown
 ARG VCS_REF=unknown
+ARG PYTHON_VERSION
 
 # OCI Image Labels for version metadata
 # These can be viewed with: docker inspect <image>
@@ -54,8 +60,8 @@ RUN useradd -m -u 1000 -s /bin/bash mcp && \
 # Set working directory
 WORKDIR /app
 
-# Copy installed packages from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+# Copy installed packages from builder (using dynamic Python version path)
+COPY --from=builder /usr/local/lib/python${PYTHON_VERSION}/site-packages /usr/local/lib/python${PYTHON_VERSION}/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
@@ -65,9 +71,9 @@ COPY --chown=mcp:mcp . .
 USER mcp
 
 # Environment variables with defaults
-# Note: VERSION is set from build arg for runtime access
-ENV FAL_KEY="" \
-    FAL_MCP_TRANSPORT="http" \
+# Note: FAL_KEY should be provided at runtime via -e or .env file (not baked into image)
+# VERSION is set from build arg for runtime access
+ENV FAL_MCP_TRANSPORT="http" \
     FAL_MCP_HOST="0.0.0.0" \
     FAL_MCP_PORT="8080" \
     FAL_MCP_VERSION="${VERSION}" \
@@ -83,8 +89,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Default command - runs dual transport server
 # Can be overridden for specific transport modes
-# Uses shell form to enable environment variable expansion
-CMD python -m fal_mcp_server.server_dual \
+# Uses shell form with exec for environment variable expansion and proper signal handling
+CMD exec python -m fal_mcp_server.server_dual \
     --transport "$FAL_MCP_TRANSPORT" \
     --host "$FAL_MCP_HOST" \
     --port "$FAL_MCP_PORT"
