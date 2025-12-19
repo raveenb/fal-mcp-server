@@ -25,12 +25,15 @@ jobs:
       - name: Check for skip-release marker
         id: check_skip
         run: |
-          # Safely check commit message for skip marker using git
-          if git log -1 --pretty=%B | grep -q '\[skip-release\]'; then
+          # Check only the commit SUBJECT LINE (not body) for skip marker
+          # Using %s format to get just the first line
+          SUBJECT=$(git log -1 --pretty=%s)
+          if echo "$SUBJECT" | grep -q '\[skip-release\]'; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Skipping release due to [skip-release] in commit message"
+            echo "Skipping release due to [skip-release] in commit subject: $SUBJECT"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
+            echo "Proceeding with release check for: $SUBJECT"
           fi
 
       - name: Set up Python
