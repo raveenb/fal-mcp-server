@@ -61,6 +61,7 @@ config.json
 
 # MCP specific
 mcp-server-*.log
+.serena/
 
 # MacOS
 .DS_Store
