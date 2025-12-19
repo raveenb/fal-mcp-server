@@ -46,7 +46,7 @@ jobs:
         if: steps.check_skip.outputs.skip != 'true'
         run: |
           python -m pip install --upgrade pip
-          pip install python-semantic-release
+          pip install python-semantic-release build twine
 
       - name: Configure Git
         if: steps.check_skip.outputs.skip != 'true'
@@ -82,6 +82,20 @@ jobs:
             echo "new_release=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Build package
+        if: steps.release.outputs.new_release == 'true'
+        run: |
+          python -m build
+          twine check dist/*
+
+      - name: Publish to PyPI
+        if: steps.release.outputs.new_release == 'true'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/*
+
       - name: Release summary
         if: steps.release.outputs.new_release == 'true'
         run: |
@@ -89,6 +103,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Released version: **${{ steps.release.outputs.new_version }}**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "This will trigger:" >> $GITHUB_STEP_SUMMARY
-          echo "- PyPI publish workflow" >> $GITHUB_STEP_SUMMARY
-          echo "- Docker versioned image build" >> $GITHUB_STEP_SUMMARY
+          echo "Published to:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GitHub Releases" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ PyPI (uvx/pip installable)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐳 Docker images (via separate workflow)" >> $GITHUB_STEP_SUMMARY
