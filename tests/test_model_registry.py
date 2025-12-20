@@ -452,6 +452,59 @@ class TestModelRegistry:
         assert "image" in flux_model.description.lower()
         assert flux_model.owner == "fal-ai"
 
+    @pytest.mark.asyncio
+    async def test_get_pricing_empty_list(self, registry):
+        """Test get_pricing with empty list returns empty prices."""
+        result = await registry.get_pricing([])
+        assert result == {"prices": []}
+
+    @pytest.mark.asyncio
+    async def test_get_pricing_success(self, registry):
+        """Test get_pricing returns pricing data from API."""
+        mock_response = {
+            "prices": [
+                {
+                    "endpoint_id": "fal-ai/flux/dev",
+                    "unit_price": 0.025,
+                    "unit": "image",
+                    "currency": "USD",
+                },
+                {
+                    "endpoint_id": "fal-ai/kling-video",
+                    "unit_price": 0.10,
+                    "unit": "video",
+                    "currency": "USD",
+                },
+            ]
+        }
+
+        with patch.object(registry, "_get_http_client") as mock_client:
+            mock_response_obj = type(
+                "MockResponse",
+                (),
+                {
+                    "raise_for_status": lambda self: None,
+                    "json": lambda self: mock_response,
+                },
+            )()
+            mock_client.return_value.get = lambda *args, **kwargs: mock_response_obj
+
+            # Create async mock
+
+            async def async_get(*args, **kwargs):
+                return mock_response_obj
+
+            mock_client.return_value.get = async_get
+
+            result = await registry.get_pricing(
+                ["fal-ai/flux/dev", "fal-ai/kling-video"]
+            )
+
+            assert "prices" in result
+            assert len(result["prices"]) == 2
+            assert result["prices"][0]["endpoint_id"] == "fal-ai/flux/dev"
+            assert result["prices"][0]["unit_price"] == 0.025
+
 
 class TestModelRegistrySingleton:
     """Tests for the module-level singleton."""

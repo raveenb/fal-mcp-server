@@ -9,7 +9,7 @@ import asyncio
 import os
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 from loguru import logger
@@ -412,6 +412,33 @@ class ModelRegistry:
         """Get all available aliases."""
         cache = await self.get_cache()
         return dict(cache.aliases)
+
+    async def get_pricing(self, endpoint_ids: List[str]) -> Dict[str, Any]:
+        """
+        Fetch pricing information for specified models.
+
+        Args:
+            endpoint_ids: List of full endpoint IDs (e.g., ["fal-ai/flux/dev"])
+
+        Returns:
+            Dict with "prices" list containing pricing info per model
+
+        Raises:
+            httpx.HTTPStatusError: If API request fails
+        """
+        if not endpoint_ids:
+            return {"prices": []}
+
+        client = await self._get_http_client()
+        # Build query params with multiple endpoint_id values
+        # Type annotation needed for mypy compatibility with httpx
+        params: List[Tuple[str, Union[str, int, float, bool, None]]] = [
+            ("endpoint_id", eid) for eid in endpoint_ids
+        ]
+        response = await client.get("/models/pricing", params=params)
+        response.raise_for_status()
+        result: Dict[str, Any] = response.json()
+        return result
 
     async def close(self) -> None:
         """Close the HTTP client."""
