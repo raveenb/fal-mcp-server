@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v1.3.2 (2025-12-20)
+
+### Bug Fixes
+
+- Move stylesheet to correct path for minima theme
+  ([#36](https://github.com/raveenb/fal-mcp-server/pull/36),
+  [`6d40cf6`](https://github.com/raveenb/fal-mcp-server/commit/6d40cf69b03166b2bdb85548b99d38d97faee2fd))
+
+### Testing
+
+- Update assets test for new stylesheet location
+  ([#36](https://github.com/raveenb/fal-mcp-server/pull/36),
+  [`6d40cf6`](https://github.com/raveenb/fal-mcp-server/commit/6d40cf69b03166b2bdb85548b99d38d97faee2fd))
+
+
 ## v1.3.1 (2025-12-20)
 
 ### Bug Fixes
