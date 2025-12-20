@@ -3,6 +3,7 @@
 
 import asyncio
 import os
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 # Fal client
@@ -72,6 +73,29 @@ async def list_tools() -> List[Tool]:
                     },
                 },
                 "required": ["models"],
+            },
+        ),
+        Tool(
+            name="get_usage",
+            description="Get usage and spending history for your Fal.ai workspace. Shows quantity, cost, and breakdown by model. Requires admin API key.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "start": {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD format). Defaults to 7 days ago.",
+                    },
+                    "end": {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD format). Defaults to today.",
+                    },
+                    "models": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Filter by specific model IDs/aliases (optional)",
+                    },
+                },
+                "required": [],
             },
         ),
         Tool(
@@ -313,6 +337,127 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     price_str = f"{unit_price} {currency}"
 
                 lines.append(f"- **{endpoint_id}**: {price_str}/{unit}")
+
+            return [TextContent(type="text", text="\n".join(lines))]
+
+        # Get usage/spending history
+        elif name == "get_usage":
+            # Get date parameters (default to last 7 days)
+            end_date = arguments.get("end")
+            start_date = arguments.get("start")
+
+            if not end_date:
+                end_date = datetime.now().strftime("%Y-%m-%d")
+            if not start_date:
+                start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+
+            # Resolve model filters if provided
+            endpoint_ids = None
+            model_inputs = arguments.get("models", [])
+            if model_inputs:
+                endpoint_ids = []
+                failed_models = []
+                for model_input in model_inputs:
+                    try:
+                        endpoint_id = await registry.resolve_model_id(model_input)
+                        endpoint_ids.append(endpoint_id)
+                    except ValueError:
+                        failed_models.append(model_input)
+
+                if failed_models:
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"❌ Unknown model(s): {', '.join(failed_models)}. Use list_models to see available options.",
+                        )
+                    ]
+
+            # Fetch usage from API
+            try:
+                usage_data = await registry.get_usage(
+                    start=start_date,
+                    end=end_date,
+                    endpoint_ids=endpoint_ids,
+                )
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 401:
+                    logger.error("Usage API returned 401 - admin key may be required")
+                    return [
+                        TextContent(
+                            type="text",
+                            text=(
+                                "❌ Unauthorized. This could mean:\n"
+                                "- Your FAL_KEY may be expired or invalid\n"
+                                "- The get_usage tool requires an admin API key with billing permissions\n"
+                                "Please verify your API key configuration."
+                            ),
+                        )
+                    ]
+                logger.error(
+                    "Usage API returned HTTP %d: %s",
+                    e.response.status_code,
+                    e,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Usage API error (HTTP {e.response.status_code})",
+                    )
+                ]
+            except httpx.TimeoutException:
+                logger.error("Usage API timeout")
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ Usage request timed out. Please try again.",
+                    )
+                ]
+            except httpx.ConnectError as e:
+                logger.error("Cannot connect to usage API: %s", e)
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ Cannot connect to Fal.ai API. Check your network connection.",
+                    )
+                ]
+
+            # Extract summary data
+            summary = usage_data.get("summary", [])
+            if not summary:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"📊 No usage data found for {start_date} to {end_date}.",
+                    )
+                ]
+
+            # Calculate totals and format output
+            total_cost = sum(item.get("cost", 0) for item in summary)
+            currency = summary[0].get("currency", "USD") if summary else "USD"
+
+            lines = [f"📊 **Usage Summary** ({start_date} to {end_date})\n"]
+
+            # Format total
+            if currency == "USD":
+                total_str = f"${total_cost:.2f}"
+            else:
+                total_str = f"{total_cost:.2f} {currency}"
+            lines.append(f"**Total**: {total_str}\n")
+
+            # Format by model
+            lines.append("**By Model**:")
+            for item in sorted(summary, key=lambda x: x.get("cost", 0), reverse=True):
+                endpoint_id = item.get("endpoint_id", "Unknown")
+                quantity = item.get("quantity", 0)
+                unit = item.get("unit", "request")
+                cost = item.get("cost", 0)
+
+                if currency == "USD":
+                    cost_str = f"${cost:.2f}"
+                else:
+                    cost_str = f"{cost:.2f} {currency}"
+
+                lines.append(f"- {endpoint_id}: {quantity} {unit}s = {cost_str}")
 
             return [TextContent(type="text", text="\n".join(lines))]
 

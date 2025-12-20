@@ -440,6 +440,56 @@ class ModelRegistry:
         result: Dict[str, Any] = response.json()
         return result
 
+    async def get_usage(
+        self,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        endpoint_ids: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Fetch usage and spending history.
+
+        Args:
+            start: Start date (YYYY-MM-DD format)
+            end: End date (YYYY-MM-DD format)
+            endpoint_ids: Optional list of endpoint IDs to filter by
+
+        Returns:
+            Dict with "time_series" and "summary" usage data
+
+        Raises:
+            httpx.HTTPStatusError: If API request fails (e.g., 401 for non-admin key)
+        """
+        client = await self._get_http_client()
+
+        # Build query params
+        params: Dict[str, Any] = {"expand": "summary"}
+        if start:
+            params["start"] = start
+        if end:
+            params["end"] = end
+
+        # Add endpoint_id filters if specified
+        if endpoint_ids:
+            # For multiple endpoint IDs, we need to make the request with repeated params
+            # httpx supports this with a list of tuples
+            param_tuples: List[Tuple[str, Union[str, int, float, bool, None]]] = [
+                ("expand", "summary")
+            ]
+            if start:
+                param_tuples.append(("start", start))
+            if end:
+                param_tuples.append(("end", end))
+            for eid in endpoint_ids:
+                param_tuples.append(("endpoint_id", eid))
+            response = await client.get("/models/usage", params=param_tuples)
+        else:
+            response = await client.get("/models/usage", params=params)
+
+        response.raise_for_status()
+        result: Dict[str, Any] = response.json()
+        return result
+
     async def close(self) -> None:
         """Close the HTTP client."""
         if self._http_client:

@@ -505,6 +505,76 @@ class TestModelRegistry:
             assert result["prices"][0]["endpoint_id"] == "fal-ai/flux/dev"
             assert result["prices"][0]["unit_price"] == 0.025
 
+    @pytest.mark.asyncio
+    async def test_get_usage_success(self, registry):
+        """Test get_usage returns usage data from API."""
+        mock_response = {
+            "time_series": [],
+            "summary": [
+                {
+                    "endpoint_id": "fal-ai/flux/dev",
+                    "unit": "image",
+                    "quantity": 100,
+                    "cost": 2.50,
+                    "currency": "USD",
+                }
+            ],
+            "has_more": False,
+        }
+
+        with patch.object(registry, "_get_http_client") as mock_client:
+            mock_response_obj = type(
+                "MockResponse",
+                (),
+                {
+                    "raise_for_status": lambda self: None,
+                    "json": lambda self: mock_response,
+                },
+            )()
+
+            async def async_get(*args, **kwargs):
+                return mock_response_obj
+
+            mock_client.return_value.get = async_get
+
+            result = await registry.get_usage(
+                start="2025-01-01",
+                end="2025-01-31",
+            )
+
+            assert "summary" in result
+            assert len(result["summary"]) == 1
+            assert result["summary"][0]["endpoint_id"] == "fal-ai/flux/dev"
+            assert result["summary"][0]["cost"] == 2.50
+
+    @pytest.mark.asyncio
+    async def test_get_usage_with_endpoint_filter(self, registry):
+        """Test get_usage with endpoint_id filter."""
+        mock_response = {"time_series": [], "summary": [], "has_more": False}
+
+        with patch.object(registry, "_get_http_client") as mock_client:
+            mock_response_obj = type(
+                "MockResponse",
+                (),
+                {
+                    "raise_for_status": lambda self: None,
+                    "json": lambda self: mock_response,
+                },
+            )()
+
+            async def async_get(*args, **kwargs):
+                return mock_response_obj
+
+            mock_client.return_value.get = async_get
+
+            result = await registry.get_usage(
+                start="2025-01-01",
+                end="2025-01-31",
+                endpoint_ids=["fal-ai/flux/dev"],
+            )
+
+            assert "summary" in result
+
 
 class TestModelRegistrySingleton:
     """Tests for the module-level singleton."""
