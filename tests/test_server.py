@@ -72,9 +72,24 @@ async def test_list_tools():
 
     tool_names = [t.name for t in tools]
     assert "list_models" in tool_names
+    assert "get_pricing" in tool_names
     assert "generate_image" in tool_names
     assert "generate_video" in tool_names
     assert "generate_music" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_get_pricing_tool_schema():
+    """Test that get_pricing tool has correct schema"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    pricing_tool = next(t for t in tools if t.name == "get_pricing")
+
+    assert pricing_tool is not None
+    assert "models" in pricing_tool.inputSchema["properties"]
+    assert pricing_tool.inputSchema["properties"]["models"]["type"] == "array"
+    assert "models" in pricing_tool.inputSchema["required"]
 
 
 @pytest.mark.asyncio

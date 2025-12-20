@@ -413,6 +413,30 @@ class ModelRegistry:
         cache = await self.get_cache()
         return dict(cache.aliases)
 
+    async def get_pricing(self, endpoint_ids: List[str]) -> Dict[str, Any]:
+        """
+        Fetch pricing information for specified models.
+
+        Args:
+            endpoint_ids: List of full endpoint IDs (e.g., ["fal-ai/flux/dev"])
+
+        Returns:
+            Dict with "prices" list containing pricing info per model
+
+        Raises:
+            httpx.HTTPStatusError: If API request fails
+        """
+        if not endpoint_ids:
+            return {"prices": []}
+
+        client = await self._get_http_client()
+        # Build query params with multiple endpoint_id values
+        params = [("endpoint_id", eid) for eid in endpoint_ids]
+        response = await client.get("/models/pricing", params=params)
+        response.raise_for_status()
+        result: Dict[str, Any] = response.json()
+        return result
+
     async def close(self) -> None:
         """Close the HTTP client."""
         if self._http_client:

@@ -57,6 +57,23 @@ async def list_tools() -> List[Tool]:
             },
         ),
         Tool(
+            name="get_pricing",
+            description="Get pricing information for Fal.ai models. Returns cost per unit (image/video/second) in USD. Use this to check costs before generating content.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "models": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Model IDs or aliases to get pricing for (e.g., ['flux_schnell', 'fal-ai/kling-video'])",
+                        "minItems": 1,
+                        "maxItems": 50,
+                    },
+                },
+                "required": ["models"],
+            },
+        ),
+        Tool(
             name="generate_image",
             description="Generate images from text prompts. Use list_models with category='image' to discover available models.",
             inputSchema={
@@ -204,6 +221,76 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         else model.description
                     )
                     lines.append(f"  - {desc}")
+
+            return [TextContent(type="text", text="\n".join(lines))]
+
+        # Get pricing for models
+        elif name == "get_pricing":
+            model_inputs = arguments.get("models", [])
+            if not model_inputs:
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ No models specified. Provide a list of model IDs or aliases.",
+                    )
+                ]
+
+            # Resolve all model inputs to endpoint IDs
+            endpoint_ids = []
+            failed_models = []
+            for model_input in model_inputs:
+                try:
+                    endpoint_id = await registry.resolve_model_id(model_input)
+                    endpoint_ids.append(endpoint_id)
+                except ValueError:
+                    failed_models.append(model_input)
+
+            if failed_models:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Unknown model(s): {', '.join(failed_models)}. Use list_models to see available options.",
+                    )
+                ]
+
+            # Fetch pricing from API
+            try:
+                pricing_data = await registry.get_pricing(endpoint_ids)
+            except Exception as e:
+                logger.error("Failed to fetch pricing: %s", e)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Failed to fetch pricing information: {str(e)}",
+                    )
+                ]
+
+            prices = pricing_data.get("prices", [])
+            if not prices:
+                return [
+                    TextContent(
+                        type="text",
+                        text="No pricing information available for the specified models.",
+                    )
+                ]
+
+            # Format output
+            lines = ["💰 **Pricing Information**\n"]
+            for price_info in prices:
+                endpoint_id = price_info.get("endpoint_id", "Unknown")
+                unit_price = price_info.get("unit_price", 0)
+                unit = price_info.get("unit", "request")
+                currency = price_info.get("currency", "USD")
+
+                # Format price with currency symbol
+                if currency == "USD":
+                    price_str = f"${unit_price:.4f}".rstrip("0").rstrip(".")
+                    if unit_price < 0.01 and unit_price > 0:
+                        price_str = f"${unit_price:.4f}"
+                else:
+                    price_str = f"{unit_price} {currency}"
+
+                lines.append(f"- **{endpoint_id}**: {price_str}/{unit}")
 
             return [TextContent(type="text", text="\n".join(lines))]
 
