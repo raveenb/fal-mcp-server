@@ -291,6 +291,19 @@ Use `list_models` with category filters to discover more:
 - `list_models(category="audio")` - All audio models
 - `list_models(search="flux")` - Search for specific models
 
+## 📚 Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Installation Guide](docs/installation.md) | Detailed setup instructions for all platforms |
+| [API Reference](docs/api.md) | Complete tool documentation with parameters |
+| [Examples](docs/examples.md) | Usage examples for image, video, and audio generation |
+| [Docker Guide](docs/docker.md) | Container deployment and configuration |
+| [HTTP Transport](docs/HTTP_TRANSPORT.md) | Web-based SSE transport setup |
+| [Local Testing](docs/LOCAL_TESTING.md) | Running CI locally with `act` |
+
+📖 **Full documentation site**: [raveenb.github.io/fal-mcp-server](https://raveenb.github.io/fal-mcp-server/)
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
