@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.4.3 (2025-12-20)
+
+### Bug Fixes
+
+- Correct uvx command syntax in README and .mcp.json
+  ([`e2bf532`](https://github.com/raveenb/fal-mcp-server/commit/e2bf5327370927c870dc6df7eea02c23735b0741))
+
+### Documentation
+
+- Add documentation section to README with direct links
+  ([`d0e13ac`](https://github.com/raveenb/fal-mcp-server/commit/d0e13ac6ea9aa469d574cdc9fd3a0f6aae0c8ae7))
+
+
 ## v1.4.2 (2025-12-20)
 
 ### Bug Fixes
