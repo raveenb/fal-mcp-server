@@ -86,6 +86,28 @@ class ModelRegistry:
         "audio-to-audio": "audio",
     }
 
+    # Legacy alias category mappings for fallback cache
+    LEGACY_ALIAS_CATEGORIES: Dict[str, str] = {
+        # Image models
+        "flux_schnell": "image",
+        "flux_dev": "image",
+        "flux_pro": "image",
+        "sdxl": "image",
+        "stable_diffusion": "image",
+        # Video models
+        "svd": "video",
+        "animatediff": "video",
+        "kling": "video",
+        # Audio models
+        "musicgen": "audio",
+        "musicgen_large": "audio",
+        "bark": "audio",
+        "whisper": "audio",
+    }
+
+    # Shorter TTL for fallback cache to retry API sooner
+    FALLBACK_TTL = 60  # 1 minute
+
     def __init__(self, ttl_seconds: int = DEFAULT_TTL):
         self._cache: Optional[ModelCache] = None
         self._lock = asyncio.Lock()
@@ -137,11 +159,20 @@ class ModelRegistry:
 
         while True:
             data = await self._fetch_models_page(cursor=cursor, category=category)
-            items = data.get("items", [])
-            all_models.extend(items)
+            # API returns "models" array, not "items"
+            models = data.get("models", [])
+
+            # Log warning if API returns empty or unexpected response
+            if not models and not all_models:
+                logger.warning(
+                    "API returned empty models list - response keys: %s",
+                    list(data.keys()),
+                )
+
+            all_models.extend(models)
 
             cursor = data.get("next_cursor")
-            if not cursor:
+            if not cursor or not data.get("has_more", False):
                 break
 
         return all_models
@@ -155,17 +186,23 @@ class ModelRegistry:
         by_category: Dict[str, List[str]] = {"image": [], "video": [], "audio": []}
 
         for raw in raw_models:
-            model_id = raw.get("endpoint_id", raw.get("id", ""))
+            model_id = raw.get("endpoint_id", "")
             if not model_id:
                 continue
 
+            # Metadata is nested under "metadata" key in API response
+            metadata = raw.get("metadata", {})
+
+            # Extract owner from endpoint_id (e.g., "fal-ai/flux/dev" -> "fal-ai")
+            owner = model_id.split("/")[0] if "/" in model_id else ""
+
             model = FalModel(
                 id=model_id,
-                name=raw.get("title", raw.get("name", model_id)),
-                description=raw.get("description", ""),
-                category=raw.get("category", ""),
-                owner=raw.get("owner", ""),
-                thumbnail_url=raw.get("thumbnail_url"),
+                name=metadata.get("display_name", model_id),
+                description=metadata.get("description", ""),
+                category=metadata.get("category", ""),
+                owner=owner,
+                thumbnail_url=metadata.get("thumbnail_url"),
             )
             models[model_id] = model
 
@@ -251,13 +288,44 @@ class ModelRegistry:
             self._cache = self._create_fallback_cache()
 
     def _create_fallback_cache(self) -> ModelCache:
-        """Create a fallback cache with just legacy aliases."""
+        """Create a fallback cache with legacy aliases converted to FalModel objects."""
+        models: Dict[str, FalModel] = {}
+        by_category: Dict[str, List[str]] = {"image": [], "video": [], "audio": []}
+
+        for alias, model_id in self.LEGACY_ALIASES.items():
+            # Skip if we already processed this model_id (handles duplicate aliases)
+            if model_id in models:
+                continue
+
+            # Get category with warning for missing mappings
+            category = self.LEGACY_ALIAS_CATEGORIES.get(alias)
+            if category is None:
+                logger.warning(
+                    "Missing category mapping for legacy alias '%s' (model: %s) "
+                    "- defaulting to 'image'",
+                    alias,
+                    model_id,
+                )
+                category = "image"
+
+            model = FalModel(
+                id=model_id,
+                name=alias.replace(
+                    "_", " "
+                ).title(),  # e.g., "flux_schnell" -> "Flux Schnell"
+                description=f"Fal.ai {category} model ({model_id})",
+                category=category,
+                owner="fal-ai",
+            )
+            models[model_id] = model
+            by_category[category].append(model_id)
+
         return ModelCache(
-            models={},
+            models=models,
             aliases=dict(self.LEGACY_ALIASES),
-            by_category={"image": [], "video": [], "audio": []},
+            by_category=by_category,
             fetched_at=time.time(),
-            ttl_seconds=self._ttl_seconds,
+            ttl_seconds=self.FALLBACK_TTL,  # Shorter TTL to retry API sooner
         )
 
     def is_full_model_id(self, model_input: str) -> bool:
