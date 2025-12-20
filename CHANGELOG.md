@@ -2,6 +2,34 @@
 
 <!-- version list -->
 
+## v1.4.4 (2025-12-20)
+
+### Bug Fixes
+
+- Address PR review feedback for model registry
+  ([#45](https://github.com/raveenb/fal-mcp-server/pull/45),
+  [`dbcc245`](https://github.com/raveenb/fal-mcp-server/commit/dbcc2452ee6f116104b983de4153f251773b5505))
+
+- Correct API response parsing for Fal.ai Platform API
+  ([#45](https://github.com/raveenb/fal-mcp-server/pull/45),
+  [`dbcc245`](https://github.com/raveenb/fal-mcp-server/commit/dbcc2452ee6f116104b983de4153f251773b5505))
+
+- List_models returns fallback legacy aliases when API unavailable
+  ([#45](https://github.com/raveenb/fal-mcp-server/pull/45),
+  [`dbcc245`](https://github.com/raveenb/fal-mcp-server/commit/dbcc2452ee6f116104b983de4153f251773b5505))
+
+### Code Style
+
+- Fix Black formatting in model_registry.py
+  ([#45](https://github.com/raveenb/fal-mcp-server/pull/45),
+  [`dbcc245`](https://github.com/raveenb/fal-mcp-server/commit/dbcc2452ee6f116104b983de4153f251773b5505))
+
+### Documentation
+
+- Improve Docker setup instructions with clear steps
+  ([`25b1b4d`](https://github.com/raveenb/fal-mcp-server/commit/25b1b4d94906695a7b8f8a0ccc65a589bab603d7))
+
+
 ## v1.4.3 (2025-12-20)
 
 ### Bug Fixes
