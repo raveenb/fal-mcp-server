@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.4.1 (2025-12-20)
+
+### Bug Fixes
+
+- **docs**: Properly style Rouge syntax highlighter code blocks
+  ([#38](https://github.com/raveenb/fal-mcp-server/pull/38),
+  [`2c3331c`](https://github.com/raveenb/fal-mcp-server/commit/2c3331cef2183bf47d7bb53ff31eb8afcea63933))
+
+
 ## v1.4.0 (2025-12-20)
 
 ### Features
