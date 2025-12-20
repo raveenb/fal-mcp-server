@@ -9,7 +9,7 @@ import asyncio
 import os
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 from loguru import logger
@@ -431,7 +431,10 @@ class ModelRegistry:
 
         client = await self._get_http_client()
         # Build query params with multiple endpoint_id values
-        params = [("endpoint_id", eid) for eid in endpoint_ids]
+        # Type annotation needed for mypy compatibility with httpx
+        params: List[Tuple[str, Union[str, int, float, bool, None]]] = [
+            ("endpoint_id", eid) for eid in endpoint_ids
+        ]
         response = await client.get("/models/pricing", params=params)
         response.raise_for_status()
         result: Dict[str, Any] = response.json()
