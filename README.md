@@ -83,19 +83,44 @@ uvx --from fal-mcp-server==1.4.0 fal-mcp
 
 #### Option 2: Docker (Recommended for Production) 🐳
 
-Official Docker image available on GitHub Container Registry:
+Official Docker image available on GitHub Container Registry.
+
+**Step 1: Start the Docker container**
 
 ```bash
-# Pull the latest image
-docker pull ghcr.io/raveenb/fal-mcp-server:latest
-
-# Run with your API key (uses sensible defaults)
+# Pull and run with your API key
 docker run -d \
   --name fal-mcp \
   -e FAL_KEY=your-api-key \
   -p 8080:8080 \
   ghcr.io/raveenb/fal-mcp-server:latest
+
+# Verify it's running
+docker logs fal-mcp
 ```
+
+**Step 2: Configure Claude Desktop to connect**
+
+Add to your Claude Desktop config file:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "fal-ai": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:8080/sse"]
+    }
+  }
+}
+```
+
+> **Note:** This uses [mcp-remote](https://www.npmjs.com/package/mcp-remote) to connect to the HTTP/SSE endpoint. Alternatively, if you have `curl` available: `"command": "curl", "args": ["-N", "http://localhost:8080/sse"]`
+
+**Step 3: Restart Claude Desktop**
+
+The fal-ai tools should now be available.
 
 **Docker Environment Variables:**
 
@@ -106,19 +131,8 @@ docker run -d \
 | `FAL_MCP_HOST` | `0.0.0.0` | Host to bind the server to |
 | `FAL_MCP_PORT` | `8080` | Port for the HTTP server |
 
-```bash
-# Example with custom configuration
-docker run -d \
-  --name fal-mcp \
-  -e FAL_KEY=your-api-key \
-  -e FAL_MCP_TRANSPORT=http \
-  -e FAL_MCP_HOST=0.0.0.0 \
-  -e FAL_MCP_PORT=8080 \
-  -p 8080:8080 \
-  ghcr.io/raveenb/fal-mcp-server:latest
-```
+**Using Docker Compose:**
 
-Or use Docker Compose:
 ```bash
 curl -O https://raw.githubusercontent.com/raveenb/fal-mcp-server/main/docker-compose.yml
 echo "FAL_KEY=your-api-key" > .env
@@ -152,25 +166,12 @@ pip install -e .
    - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-#### For Docker Installation:
+#### For PyPI/pip Installation:
 ```json
 {
   "mcpServers": {
     "fal-ai": {
-      "command": "curl",
-      "args": ["-N", "http://localhost:8080/sse"]
-    }
-  }
-}
-```
-
-#### For PyPI Installation:
-```json
-{
-  "mcpServers": {
-    "fal-ai": {
-      "command": "python",
-      "args": ["-m", "fal_mcp_server.server"],
+      "command": "fal-mcp",
       "env": {
         "FAL_KEY": "your-fal-api-key"
       }
@@ -178,6 +179,8 @@ pip install -e .
   }
 }
 ```
+
+> **Note:** For Docker configuration, see [Option 2: Docker](#option-2-docker-recommended-for-production-) above.
 
 #### For Source Installation:
 ```json
