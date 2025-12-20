@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.4.0 (2025-12-20)
+
+### Features
+
+- **docs**: Add custom header with modern navigation design
+  ([#37](https://github.com/raveenb/fal-mcp-server/pull/37),
+  [`6bbc52a`](https://github.com/raveenb/fal-mcp-server/commit/6bbc52a778b606fd5c6827c7d70a6ef041e8f611))
+
+
 ## v1.3.2 (2025-12-20)
 
 ### Bug Fixes
