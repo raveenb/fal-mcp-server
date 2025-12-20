@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 # Fal client
 import fal_client
+import httpx
 import mcp.server.stdio
 from loguru import logger
 
@@ -256,12 +257,33 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             # Fetch pricing from API
             try:
                 pricing_data = await registry.get_pricing(endpoint_ids)
-            except Exception as e:
-                logger.error("Failed to fetch pricing: %s", e)
+            except httpx.HTTPStatusError as e:
+                logger.error(
+                    "Pricing API returned HTTP %d for %s: %s",
+                    e.response.status_code,
+                    endpoint_ids,
+                    e,
+                )
                 return [
                     TextContent(
                         type="text",
-                        text=f"❌ Failed to fetch pricing information: {str(e)}",
+                        text=f"❌ Pricing API error (HTTP {e.response.status_code})",
+                    )
+                ]
+            except httpx.TimeoutException:
+                logger.error("Pricing API timeout for %s", endpoint_ids)
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ Pricing request timed out. Please try again.",
+                    )
+                ]
+            except httpx.ConnectError as e:
+                logger.error("Cannot connect to pricing API: %s", e)
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ Cannot connect to Fal.ai API. Check your network connection.",
                     )
                 ]
 
