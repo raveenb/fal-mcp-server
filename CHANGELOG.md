@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v1.7.0 (2025-12-20)
+
+### Bug Fixes
+
+- Address PR review feedback for get_usage tool
+  ([#53](https://github.com/raveenb/fal-mcp-server/pull/53),
+  [`a241abf`](https://github.com/raveenb/fal-mcp-server/commit/a241abf33140ce137899fc2b2e16927e9bb01008))
+
+### Features
+
+- Add get_usage MCP tool for spending reports
+  ([#53](https://github.com/raveenb/fal-mcp-server/pull/53),
+  [`a241abf`](https://github.com/raveenb/fal-mcp-server/commit/a241abf33140ce137899fc2b2e16927e9bb01008))
+
+
 ## v1.6.0 (2025-12-20)
 
 ### Bug Fixes
