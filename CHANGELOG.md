@@ -2,6 +2,42 @@
 
 <!-- version list -->
 
+## v1.3.1 (2025-12-20)
+
+### Bug Fixes
+
+- Repair GitHub Pages Jekyll configuration
+  ([#35](https://github.com/raveenb/fal-mcp-server/pull/35),
+  [`9b7ab27`](https://github.com/raveenb/fal-mcp-server/commit/9b7ab2709fd92b6c7bbe176a41154d69bed4556d))
+
+### Chores
+
+- Add Dependabot configuration for automated updates
+  ([#27](https://github.com/raveenb/fal-mcp-server/pull/27),
+  [`e880598`](https://github.com/raveenb/fal-mcp-server/commit/e880598385f5bc07ef06d59c437cbad3abfbb131))
+
+- Upgrade Docker image to Python 3.13 with dynamic paths
+  ([#33](https://github.com/raveenb/fal-mcp-server/pull/33),
+  [`76453e7`](https://github.com/raveenb/fal-mcp-server/commit/76453e75b60e72fcef294d71902ca886dc5a3a6c))
+
+- **deps**: Bump actions/configure-pages from 4 to 5
+  ([#29](https://github.com/raveenb/fal-mcp-server/pull/29),
+  [`7d4f78c`](https://github.com/raveenb/fal-mcp-server/commit/7d4f78c439df60c7ab1ac2722e582058c9205e71))
+
+- **deps**: Bump actions/upload-pages-artifact from 3 to 4
+  ([#30](https://github.com/raveenb/fal-mcp-server/pull/30),
+  [`565251f`](https://github.com/raveenb/fal-mcp-server/commit/565251fce41c292cc0123d7b3e2a5e346198eba2))
+
+- **deps**: Bump docker/build-push-action from 5 to 6
+  ([#31](https://github.com/raveenb/fal-mcp-server/pull/31),
+  [`7cd964b`](https://github.com/raveenb/fal-mcp-server/commit/7cd964b4a993ef1e8bd5e9eb373ce5b8d6bb171f))
+
+### Testing
+
+- Make Docker tests version-agnostic ([#33](https://github.com/raveenb/fal-mcp-server/pull/33),
+  [`76453e7`](https://github.com/raveenb/fal-mcp-server/commit/76453e75b60e72fcef294d71902ca886dc5a3a6c))
+
+
 ## v1.3.0 (2025-12-19)
 
 ### Bug Fixes
