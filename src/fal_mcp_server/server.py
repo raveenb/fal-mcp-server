@@ -385,7 +385,12 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     return [
                         TextContent(
                             type="text",
-                            text="❌ Unauthorized. The get_usage tool requires an admin API key with billing permissions.",
+                            text=(
+                                "❌ Unauthorized. This could mean:\n"
+                                "- Your FAL_KEY may be expired or invalid\n"
+                                "- The get_usage tool requires an admin API key with billing permissions\n"
+                                "Please verify your API key configuration."
+                            ),
                         )
                     ]
                 logger.error(
@@ -437,7 +442,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 total_str = f"${total_cost:.2f}"
             else:
                 total_str = f"{total_cost:.2f} {currency}"
-            lines.append(f"**Total**: {total_str} {currency}\n")
+            lines.append(f"**Total**: {total_str}\n")
 
             # Format by model
             lines.append("**By Model**:")
