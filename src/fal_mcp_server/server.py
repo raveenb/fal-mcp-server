@@ -3,8 +3,7 @@
 
 import asyncio
 import os
-import time
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List
 
 # Fal client
 import fal_client
@@ -25,35 +24,6 @@ if api_key := os.getenv("FAL_KEY"):
 
 # Initialize the MCP server
 server = Server("fal-ai-mcp")
-
-
-async def wait_for_queue_result(
-    handle: Any, timeout: int = 300
-) -> Optional[Dict[str, Any]]:
-    """Wait for a queued job to complete with timeout"""
-    start_time = time.time()
-
-    while True:
-        # Check timeout
-        if time.time() - start_time > timeout:
-            return {"error": f"Timeout after {timeout} seconds"}
-
-        # Check status using the handle
-        status = await handle.status()
-
-        if hasattr(status, "status"):
-            status_str = status.status
-        else:
-            status_str = str(status)
-
-        if "completed" in status_str.lower():
-            result = await handle.get()
-            return cast(Dict[str, Any], result)
-        elif "failed" in status_str.lower() or "error" in status_str.lower():
-            return {"error": f"Job failed: {status}"}
-
-        # Wait before polling again
-        await asyncio.sleep(2)
 
 
 @server.list_tools()
@@ -277,7 +247,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     response += f"Image {i}: {url}\n"
                 return [TextContent(type="text", text=response)]
 
-        # Long operations using queue API
+        # Long operations using subscribe_async (handles queue automatically)
         elif name == "generate_video":
             model_input = arguments.get("model", "svd")
             try:
@@ -294,43 +264,47 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             if "duration" in arguments:
                 fal_args["duration"] = arguments["duration"]
 
-            # Submit to queue for processing
-            handle = await fal_client.submit_async(model_id, arguments=fal_args)
-            request_id = (
-                handle.request_id if hasattr(handle, "request_id") else str(handle)
-            )
-
-            # Wait for completion with status updates
-            response = f"⏳ Video generation queued (ID: {request_id[:8]}...)\n"
-            response += "Processing (this may take 30-60 seconds)...\n"
-
-            video_result: Optional[Dict[str, Any]] = await wait_for_queue_result(
-                handle, timeout=180
-            )
-
-            if video_result is not None and "error" not in video_result:
-                video_dict = video_result.get("video", {})
-                if isinstance(video_dict, dict):
-                    video_url = video_dict.get("url")
-                else:
-                    video_url = video_result.get("url")
-                if video_url:
-                    return [
-                        TextContent(
-                            type="text",
-                            text=f"🎬 Video generated with {model_id}: {video_url}",
-                        )
-                    ]
-            else:
-                error_msg = (
-                    video_result.get("error", "Unknown error")
-                    if video_result
-                    else "Unknown error"
+            # Use subscribe_async with timeout protection
+            logger.info("Starting video generation with %s", model_id)
+            try:
+                video_result = await asyncio.wait_for(
+                    fal_client.subscribe_async(
+                        model_id,
+                        arguments=fal_args,
+                        with_logs=True,
+                    ),
+                    timeout=180,  # 3 minute timeout for video generation
                 )
+            except asyncio.TimeoutError:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Video generation timed out after 180 seconds with {model_id}",
+                    )
+                ]
+
+            # Check for error in response
+            if "error" in video_result:
+                error_msg = video_result.get("error", "Unknown error")
                 return [
                     TextContent(
                         type="text",
                         text=f"❌ Video generation failed: {error_msg}",
+                    )
+                ]
+
+            # Extract video URL from result
+            video_dict = video_result.get("video", {})
+            if isinstance(video_dict, dict):
+                video_url = video_dict.get("url")
+            else:
+                video_url = video_result.get("url")
+
+            if video_url:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"🎬 Video generated with {model_id}: {video_url}",
                     )
                 ]
 
@@ -346,52 +320,52 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     )
                 ]
 
-            # Submit to queue for longer music generation
-            handle = await fal_client.submit_async(
-                model_id,
-                arguments={
-                    "prompt": arguments["prompt"],
-                    "duration_seconds": arguments.get("duration_seconds", 30),
-                },
-            )
-
-            request_id = (
-                handle.request_id if hasattr(handle, "request_id") else str(handle)
-            )
             duration = arguments.get("duration_seconds", 30)
 
-            response = f"⏳ Music generation queued (ID: {request_id[:8]}...)\n"
-            response += (
-                f"Generating {duration}s of music (this may take 20-40 seconds)...\n"
-            )
-
-            music_result: Optional[Dict[str, Any]] = await wait_for_queue_result(
-                handle, timeout=120
-            )
-
-            if music_result is not None and "error" not in music_result:
-                audio_dict = music_result.get("audio", {})
-                if isinstance(audio_dict, dict):
-                    audio_url = audio_dict.get("url")
-                else:
-                    audio_url = music_result.get("audio_url")
-                if audio_url:
-                    return [
-                        TextContent(
-                            type="text",
-                            text=f"🎵 Generated {duration}s of music with {model_id}: {audio_url}",
-                        )
-                    ]
-            else:
-                error_msg = (
-                    music_result.get("error", "Unknown error")
-                    if music_result
-                    else "Unknown error"
+            # Use subscribe_async with timeout protection
+            logger.info("Starting music generation with %s (%ds)", model_id, duration)
+            try:
+                music_result = await asyncio.wait_for(
+                    fal_client.subscribe_async(
+                        model_id,
+                        arguments={
+                            "prompt": arguments["prompt"],
+                            "duration_seconds": duration,
+                        },
+                        with_logs=True,
+                    ),
+                    timeout=120,  # 2 minute timeout for music generation
                 )
+            except asyncio.TimeoutError:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Music generation timed out after 120 seconds with {model_id}",
+                    )
+                ]
+
+            # Check for error in response
+            if "error" in music_result:
+                error_msg = music_result.get("error", "Unknown error")
                 return [
                     TextContent(
                         type="text",
                         text=f"❌ Music generation failed: {error_msg}",
+                    )
+                ]
+
+            # Extract audio URL from result
+            audio_dict = music_result.get("audio", {})
+            if isinstance(audio_dict, dict):
+                audio_url = audio_dict.get("url")
+            else:
+                audio_url = music_result.get("audio_url")
+
+            if audio_url:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"🎵 Generated {duration}s of music with {model_id}: {audio_url}",
                     )
                 ]
 
