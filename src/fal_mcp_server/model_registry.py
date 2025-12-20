@@ -286,7 +286,9 @@ class ModelRegistry:
             category = self.LEGACY_ALIAS_CATEGORIES.get(alias, "image")
             model = FalModel(
                 id=model_id,
-                name=alias.replace("_", " ").title(),  # e.g., "flux_schnell" -> "Flux Schnell"
+                name=alias.replace(
+                    "_", " "
+                ).title(),  # e.g., "flux_schnell" -> "Flux Schnell"
                 description=f"Fal.ai {category} model ({model_id})",
                 category=category,
                 owner="fal-ai",
