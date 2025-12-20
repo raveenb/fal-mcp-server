@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.5.0 (2025-12-20)
+
+### Features
+
+- **image**: Add enable_safety_checker and output_format parameters
+  ([#50](https://github.com/raveenb/fal-mcp-server/pull/50),
+  [`6cb8a29`](https://github.com/raveenb/fal-mcp-server/commit/6cb8a2909b1fcf680b766f6fbc293fddd3656407))
+
+
 ## v1.4.4 (2025-12-20)
 
 ### Bug Fixes
