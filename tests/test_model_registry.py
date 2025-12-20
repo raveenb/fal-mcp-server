@@ -115,6 +115,36 @@ class TestModelRegistry:
             assert "flux_schnell" in cache.aliases
             assert cache.aliases["flux_schnell"] == "fal-ai/flux/schnell"
 
+    @pytest.mark.asyncio
+    async def test_list_models_returns_fallback_on_api_failure(self, registry):
+        """Test that list_models returns legacy models when API fails.
+
+        This is a critical end-to-end test: API failure should still allow
+        list_models to return the legacy aliases as FalModel objects.
+        """
+        with patch.object(
+            registry, "_fetch_all_models", side_effect=Exception("API Error")
+        ):
+            # list_models should return models from fallback cache
+            all_models = await registry.list_models()
+            assert len(all_models) > 0, "list_models should return fallback models"
+
+            # Check we have models from each category
+            image_models = await registry.list_models(category="image")
+            assert len(image_models) >= 5, "Should have at least 5 image models"
+
+            video_models = await registry.list_models(category="video")
+            assert len(video_models) >= 3, "Should have at least 3 video models"
+
+            audio_models = await registry.list_models(category="audio")
+            assert len(audio_models) >= 4, "Should have at least 4 audio models"
+
+            # Verify specific models are present
+            model_ids = [m.id for m in all_models]
+            assert "fal-ai/flux/schnell" in model_ids
+            assert "fal-ai/kling-video" in model_ids
+            assert "fal-ai/musicgen-medium" in model_ids
+
     def test_cache_ttl_expiration(self, registry):
         """Test that cache expires after TTL."""
         # Create expired cache

@@ -250,12 +250,47 @@ class ModelRegistry:
             )
             self._cache = self._create_fallback_cache()
 
+    # Legacy alias category mappings for fallback
+    LEGACY_ALIAS_CATEGORIES: Dict[str, str] = {
+        # Image models
+        "flux_schnell": "image",
+        "flux_dev": "image",
+        "flux_pro": "image",
+        "sdxl": "image",
+        "stable_diffusion": "image",
+        # Video models
+        "svd": "video",
+        "animatediff": "video",
+        "kling": "video",
+        # Audio models
+        "musicgen": "audio",
+        "musicgen_large": "audio",
+        "bark": "audio",
+        "whisper": "audio",
+    }
+
     def _create_fallback_cache(self) -> ModelCache:
-        """Create a fallback cache with just legacy aliases."""
+        """Create a fallback cache with legacy aliases converted to FalModel objects."""
+        models: Dict[str, FalModel] = {}
+        by_category: Dict[str, List[str]] = {"image": [], "video": [], "audio": []}
+
+        for alias, model_id in self.LEGACY_ALIASES.items():
+            # Create a FalModel for each legacy alias
+            category = self.LEGACY_ALIAS_CATEGORIES.get(alias, "image")
+            model = FalModel(
+                id=model_id,
+                name=alias.replace("_", " ").title(),  # e.g., "flux_schnell" -> "Flux Schnell"
+                description=f"Fal.ai {category} model ({model_id})",
+                category=category,
+                owner="fal-ai",
+            )
+            models[model_id] = model
+            by_category[category].append(model_id)
+
         return ModelCache(
-            models={},
+            models=models,
             aliases=dict(self.LEGACY_ALIASES),
-            by_category={"image": [], "video": [], "audio": []},
+            by_category=by_category,
             fetched_at=time.time(),
             ttl_seconds=self._ttl_seconds,
         )
