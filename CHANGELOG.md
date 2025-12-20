@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.6.0 (2025-12-20)
+
+### Bug Fixes
+
+- Add type annotation for httpx params to satisfy mypy
+  ([#52](https://github.com/raveenb/fal-mcp-server/pull/52),
+  [`aedbe96`](https://github.com/raveenb/fal-mcp-server/commit/aedbe963efb972d36e8aebf3d371c8f8fb62d633))
+
+- Replace bare Exception catch with specific httpx exceptions
+  ([#52](https://github.com/raveenb/fal-mcp-server/pull/52),
+  [`aedbe96`](https://github.com/raveenb/fal-mcp-server/commit/aedbe963efb972d36e8aebf3d371c8f8fb62d633))
+
+### Features
+
+- Add get_pricing MCP tool for cost transparency
+  ([#52](https://github.com/raveenb/fal-mcp-server/pull/52),
+  [`aedbe96`](https://github.com/raveenb/fal-mcp-server/commit/aedbe963efb972d36e8aebf3d371c8f8fb62d633))
+
+
 ## v1.5.1 (2025-12-20)
 
 ### Bug Fixes
