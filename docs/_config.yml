@@ -23,7 +23,6 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
-  - jekyll-redirect-from
 
 # Analytics
 google_analytics: # Add your GA4 ID here
@@ -60,17 +59,7 @@ defaults:
       path: ""
       type: "pages"
     values:
-      layout: "default"
-  - scope:
-      path: "api"
-      type: "pages"
-    values:
-      layout: "api"
-  - scope:
-      path: "examples"
-      type: "pages"
-    values:
-      layout: "example"
+      layout: "page"
 
 # Exclude from build
 exclude:
