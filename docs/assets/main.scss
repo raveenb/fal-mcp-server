@@ -380,15 +380,18 @@ pre code {
     margin: 0;
     padding: 0;
     background: transparent;
+    border-radius: 0;
   }
 
-  // Table structure for line numbers
+  // Rouge table structure (.rouge-table is the actual class name)
+  .rouge-table,
   table {
     width: 100%;
     border-collapse: collapse;
     border: none;
     margin: 0;
     padding: 0;
+    border-spacing: 0;
 
     td {
       padding: 0;
@@ -396,31 +399,40 @@ pre code {
       vertical-align: top;
     }
 
-    // Line numbers column
+    // Line numbers gutter (.rouge-gutter is the actual class name)
+    .rouge-gutter,
     td.gutter,
     td.gl {
       width: 50px;
-      padding: 15px 10px 15px 15px;
+      padding: 15px 12px 15px 15px;
       color: #636d83;
       text-align: right;
       user-select: none;
       border-right: 1px solid #3e4451;
+      background: rgba(0, 0, 0, 0.15);
 
-      pre {
+      pre,
+      pre.lineno {
         color: #636d83;
         padding: 0;
         margin: 0;
         background: transparent;
+        white-space: pre;
+        line-height: 1.6;
       }
     }
 
-    // Code content column
+    // Code content column (.rouge-code is the actual class name)
+    .rouge-code,
     td.code {
       padding: 15px;
+      overflow-x: auto;
 
       pre {
         padding: 0;
         margin: 0;
+        white-space: pre;
+        line-height: 1.6;
         overflow-x: auto;
       }
     }
@@ -429,6 +441,8 @@ pre code {
   // Fallback for code blocks without table structure
   > pre {
     padding: 15px;
+    white-space: pre;
+    line-height: 1.6;
   }
 }
 
