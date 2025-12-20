@@ -351,8 +351,10 @@ pre {
   background: #282c34;
   color: #abb2bf;
   padding: 15px;
-  border-radius: 5px;
+  border-radius: 8px;
   overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.5;
 }
 
 code {
@@ -365,6 +367,79 @@ code {
 pre code {
   background: transparent;
   padding: 0;
+}
+
+// Rouge syntax highlighter with line numbers
+.highlight {
+  background: #282c34;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.5em 0;
+
+  pre {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  // Table structure for line numbers
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: none;
+    margin: 0;
+    padding: 0;
+
+    td {
+      padding: 0;
+      border: none;
+      vertical-align: top;
+    }
+
+    // Line numbers column
+    td.gutter,
+    td.gl {
+      width: 50px;
+      padding: 15px 10px 15px 15px;
+      color: #636d83;
+      text-align: right;
+      user-select: none;
+      border-right: 1px solid #3e4451;
+
+      pre {
+        color: #636d83;
+        padding: 0;
+        margin: 0;
+        background: transparent;
+      }
+    }
+
+    // Code content column
+    td.code {
+      padding: 15px;
+
+      pre {
+        padding: 0;
+        margin: 0;
+        overflow-x: auto;
+      }
+    }
+  }
+
+  // Fallback for code blocks without table structure
+  > pre {
+    padding: 15px;
+  }
+}
+
+// Inline code in paragraphs
+p code,
+li code {
+  background: #e8e8e8;
+  color: #e83e8c;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875em;
 }
 
 // Mobile responsive
