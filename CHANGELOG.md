@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.4.2 (2025-12-20)
+
+### Bug Fixes
+
+- **docs**: Use correct Rouge class names for code block styling
+  ([#40](https://github.com/raveenb/fal-mcp-server/pull/40),
+  [`88617c2`](https://github.com/raveenb/fal-mcp-server/commit/88617c282a5a70608fd6c8194332197e5604d325))
+
+
 ## v1.4.1 (2025-12-20)
 
 ### Bug Fixes
