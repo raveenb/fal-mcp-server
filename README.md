@@ -58,10 +58,10 @@ Run directly without installation using [uv](https://docs.astral.sh/uv/):
 
 ```bash
 # Run the MCP server directly
-uvx fal-mcp-server
+uvx --from fal-mcp-server fal-mcp
 
 # Or with specific version
-uvx fal-mcp-server==1.2.0
+uvx --from fal-mcp-server==1.4.0 fal-mcp
 ```
 
 **Claude Desktop Configuration for uvx:**
@@ -70,7 +70,7 @@ uvx fal-mcp-server==1.2.0
   "mcpServers": {
     "fal-ai": {
       "command": "uvx",
-      "args": ["fal-mcp-server"],
+      "args": ["--from", "fal-mcp-server", "fal-mcp"],
       "env": {
         "FAL_KEY": "your-fal-api-key"
       }
