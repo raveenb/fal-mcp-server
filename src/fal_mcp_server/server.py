@@ -126,6 +126,17 @@ async def list_tools() -> List[Tool]:
                         "type": "integer",
                         "description": "Seed for reproducible generation",
                     },
+                    "enable_safety_checker": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Enable safety checker to filter inappropriate content",
+                    },
+                    "output_format": {
+                        "type": "string",
+                        "enum": ["jpeg", "png", "webp"],
+                        "default": "png",
+                        "description": "Output image format",
+                    },
                 },
                 "required": ["prompt"],
             },
@@ -250,6 +261,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 fal_args["negative_prompt"] = arguments["negative_prompt"]
             if "seed" in arguments:
                 fal_args["seed"] = arguments["seed"]
+            if "enable_safety_checker" in arguments:
+                fal_args["enable_safety_checker"] = arguments["enable_safety_checker"]
+            if "output_format" in arguments:
+                fal_args["output_format"] = arguments["output_format"]
 
             # Use native async API for fast image generation
             result = await fal_client.run_async(model_id, arguments=fal_args)
