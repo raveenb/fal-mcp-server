@@ -137,11 +137,12 @@ class ModelRegistry:
 
         while True:
             data = await self._fetch_models_page(cursor=cursor, category=category)
-            items = data.get("items", [])
-            all_models.extend(items)
+            # API returns "models" array, not "items"
+            models = data.get("models", [])
+            all_models.extend(models)
 
             cursor = data.get("next_cursor")
-            if not cursor:
+            if not cursor or not data.get("has_more", False):
                 break
 
         return all_models
@@ -155,17 +156,23 @@ class ModelRegistry:
         by_category: Dict[str, List[str]] = {"image": [], "video": [], "audio": []}
 
         for raw in raw_models:
-            model_id = raw.get("endpoint_id", raw.get("id", ""))
+            model_id = raw.get("endpoint_id", "")
             if not model_id:
                 continue
 
+            # Metadata is nested under "metadata" key in API response
+            metadata = raw.get("metadata", {})
+
+            # Extract owner from endpoint_id (e.g., "fal-ai/flux/dev" -> "fal-ai")
+            owner = model_id.split("/")[0] if "/" in model_id else ""
+
             model = FalModel(
                 id=model_id,
-                name=raw.get("title", raw.get("name", model_id)),
-                description=raw.get("description", ""),
-                category=raw.get("category", ""),
-                owner=raw.get("owner", ""),
-                thumbnail_url=raw.get("thumbnail_url"),
+                name=metadata.get("display_name", model_id),
+                description=metadata.get("description", ""),
+                category=metadata.get("category", ""),
+                owner=owner,
+                thumbnail_url=metadata.get("thumbnail_url"),
             )
             models[model_id] = model
 
