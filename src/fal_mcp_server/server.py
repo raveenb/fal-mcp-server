@@ -264,13 +264,34 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             if "duration" in arguments:
                 fal_args["duration"] = arguments["duration"]
 
-            # Use subscribe_async - handles queue submission and polling automatically
+            # Use subscribe_async with timeout protection
             logger.info("Starting video generation with %s", model_id)
-            video_result = await fal_client.subscribe_async(
-                model_id,
-                arguments=fal_args,
-                with_logs=True,
-            )
+            try:
+                video_result = await asyncio.wait_for(
+                    fal_client.subscribe_async(
+                        model_id,
+                        arguments=fal_args,
+                        with_logs=True,
+                    ),
+                    timeout=180,  # 3 minute timeout for video generation
+                )
+            except asyncio.TimeoutError:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Video generation timed out after 180 seconds with {model_id}",
+                    )
+                ]
+
+            # Check for error in response
+            if "error" in video_result:
+                error_msg = video_result.get("error", "Unknown error")
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Video generation failed: {error_msg}",
+                    )
+                ]
 
             # Extract video URL from result
             video_dict = video_result.get("video", {})
@@ -301,16 +322,37 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
             duration = arguments.get("duration_seconds", 30)
 
-            # Use subscribe_async - handles queue submission and polling automatically
+            # Use subscribe_async with timeout protection
             logger.info("Starting music generation with %s (%ds)", model_id, duration)
-            music_result = await fal_client.subscribe_async(
-                model_id,
-                arguments={
-                    "prompt": arguments["prompt"],
-                    "duration_seconds": duration,
-                },
-                with_logs=True,
-            )
+            try:
+                music_result = await asyncio.wait_for(
+                    fal_client.subscribe_async(
+                        model_id,
+                        arguments={
+                            "prompt": arguments["prompt"],
+                            "duration_seconds": duration,
+                        },
+                        with_logs=True,
+                    ),
+                    timeout=120,  # 2 minute timeout for music generation
+                )
+            except asyncio.TimeoutError:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Music generation timed out after 120 seconds with {model_id}",
+                    )
+                ]
+
+            # Check for error in response
+            if "error" in music_result:
+                error_msg = music_result.get("error", "Unknown error")
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Music generation failed: {error_msg}",
+                    )
+                ]
 
             # Extract audio URL from result
             audio_dict = music_result.get("audio", {})
