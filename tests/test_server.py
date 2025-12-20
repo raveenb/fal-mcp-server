@@ -73,6 +73,7 @@ async def test_list_tools():
     tool_names = [t.name for t in tools]
     assert "list_models" in tool_names
     assert "get_pricing" in tool_names
+    assert "get_usage" in tool_names
     assert "generate_image" in tool_names
     assert "generate_video" in tool_names
     assert "generate_music" in tool_names
@@ -90,6 +91,22 @@ async def test_get_pricing_tool_schema():
     assert "models" in pricing_tool.inputSchema["properties"]
     assert pricing_tool.inputSchema["properties"]["models"]["type"] == "array"
     assert "models" in pricing_tool.inputSchema["required"]
+
+
+@pytest.mark.asyncio
+async def test_get_usage_tool_schema():
+    """Test that get_usage tool has correct schema"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    usage_tool = next(t for t in tools if t.name == "get_usage")
+
+    assert usage_tool is not None
+    assert "start" in usage_tool.inputSchema["properties"]
+    assert "end" in usage_tool.inputSchema["properties"]
+    assert "models" in usage_tool.inputSchema["properties"]
+    # No required fields - all parameters are optional
+    assert usage_tool.inputSchema["required"] == []
 
 
 @pytest.mark.asyncio
