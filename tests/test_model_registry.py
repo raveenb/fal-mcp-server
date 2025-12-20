@@ -324,6 +324,134 @@ class TestModelRegistry:
         # Unknown aliases should not exist
         assert await registry.model_exists("unknown_alias") is False
 
+    @pytest.mark.asyncio
+    async def test_pagination_terminates_on_has_more_false(self, registry):
+        """Test pagination stops when has_more is False even with cursor present."""
+        with patch.object(registry, "_fetch_models_page") as mock_fetch:
+            mock_fetch.side_effect = [
+                {
+                    "models": [{"endpoint_id": "fal-ai/model-1", "metadata": {}}],
+                    "next_cursor": "cursor1",
+                    "has_more": True,
+                },
+                {
+                    "models": [{"endpoint_id": "fal-ai/model-2", "metadata": {}}],
+                    "next_cursor": "cursor2",
+                    "has_more": False,
+                },
+            ]
+            result = await registry._fetch_all_models()
+            assert len(result) == 2
+            assert mock_fetch.call_count == 2  # Should stop after has_more=False
+
+    @pytest.mark.asyncio
+    async def test_pagination_terminates_when_has_more_missing(self, registry):
+        """Test pagination stops when has_more key is missing (defaults to False)."""
+        with patch.object(registry, "_fetch_models_page") as mock_fetch:
+            mock_fetch.return_value = {
+                "models": [{"endpoint_id": "fal-ai/model-1", "metadata": {}}],
+                "next_cursor": "cursor1",
+                # has_more missing - should default to False
+            }
+            result = await registry._fetch_all_models()
+            assert len(result) == 1
+            assert mock_fetch.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_fetch_all_models_uses_models_key(self, registry):
+        """Test that _fetch_all_models reads from 'models' key, not 'items'."""
+        with patch.object(registry, "_fetch_models_page") as mock_fetch:
+            mock_fetch.return_value = {
+                "models": [{"endpoint_id": "fal-ai/correct"}],
+                "items": [{"endpoint_id": "fal-ai/wrong"}],  # Should be ignored
+                "has_more": False,
+            }
+            result = await registry._fetch_all_models()
+            assert len(result) == 1
+            assert result[0]["endpoint_id"] == "fal-ai/correct"
+
+    @pytest.mark.asyncio
+    async def test_refresh_cache_extracts_nested_metadata(self, registry):
+        """Test that _refresh_cache correctly extracts metadata from nested structure."""
+        with patch.object(registry, "_fetch_all_models") as mock_fetch:
+            mock_fetch.return_value = [
+                {
+                    "endpoint_id": "fal-ai/test-model",
+                    "metadata": {
+                        "display_name": "Test Model Name",
+                        "description": "Test description",
+                        "category": "text-to-image",
+                        "thumbnail_url": "https://example.com/thumb.jpg",
+                    },
+                }
+            ]
+            cache = await registry._refresh_cache()
+            model = cache.models["fal-ai/test-model"]
+            assert model.name == "Test Model Name"
+            assert model.description == "Test description"
+            assert model.category == "text-to-image"
+            assert model.owner == "fal-ai"
+            assert model.thumbnail_url == "https://example.com/thumb.jpg"
+
+    @pytest.mark.asyncio
+    async def test_refresh_cache_handles_empty_metadata(self, registry):
+        """Test graceful handling when metadata is empty."""
+        with patch.object(registry, "_fetch_all_models") as mock_fetch:
+            mock_fetch.return_value = [
+                {
+                    "endpoint_id": "fal-ai/test-model",
+                    "metadata": {},  # Empty metadata
+                }
+            ]
+            cache = await registry._refresh_cache()
+            model = cache.models["fal-ai/test-model"]
+            assert model.name == "fal-ai/test-model"  # Falls back to model_id
+            assert model.description == ""
+            assert model.category == ""
+
+    @pytest.mark.asyncio
+    async def test_refresh_cache_handles_endpoint_id_without_slash(self, registry):
+        """Test owner extraction when endpoint_id has no slash."""
+        with patch.object(registry, "_fetch_all_models") as mock_fetch:
+            mock_fetch.return_value = [
+                {
+                    "endpoint_id": "simple-model",  # No slash
+                    "metadata": {},
+                }
+            ]
+            cache = await registry._refresh_cache()
+            model = cache.models["simple-model"]
+            assert model.owner == ""
+
+    def test_legacy_alias_categories_matches_legacy_aliases(self, registry):
+        """Test that LEGACY_ALIAS_CATEGORIES covers all LEGACY_ALIASES."""
+        for alias in registry.LEGACY_ALIASES:
+            assert (
+                alias in registry.LEGACY_ALIAS_CATEGORIES
+            ), f"Missing category for alias: {alias}"
+        for alias in registry.LEGACY_ALIAS_CATEGORIES:
+            assert (
+                alias in registry.LEGACY_ALIASES
+            ), f"Category defined for unknown alias: {alias}"
+
+    def test_fallback_cache_uses_shorter_ttl(self, registry):
+        """Test that fallback cache uses FALLBACK_TTL for faster retry."""
+        cache = registry._create_fallback_cache()
+        assert cache.ttl_seconds == registry.FALLBACK_TTL
+        assert cache.ttl_seconds == 60  # 1 minute, not 1 hour
+
+    def test_fallback_cache_model_content_quality(self, registry):
+        """Test that fallback cache models have meaningful content."""
+        cache = registry._create_fallback_cache()
+
+        # Verify model objects have proper content
+        flux_model = cache.models.get("fal-ai/flux/schnell")
+        assert flux_model is not None
+        assert flux_model.name == "Flux Schnell"
+        assert flux_model.category == "image"
+        assert "image" in flux_model.description.lower()
+        assert flux_model.owner == "fal-ai"
+
 
 class TestModelRegistrySingleton:
     """Tests for the module-level singleton."""

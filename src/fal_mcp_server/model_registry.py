@@ -86,6 +86,28 @@ class ModelRegistry:
         "audio-to-audio": "audio",
     }
 
+    # Legacy alias category mappings for fallback cache
+    LEGACY_ALIAS_CATEGORIES: Dict[str, str] = {
+        # Image models
+        "flux_schnell": "image",
+        "flux_dev": "image",
+        "flux_pro": "image",
+        "sdxl": "image",
+        "stable_diffusion": "image",
+        # Video models
+        "svd": "video",
+        "animatediff": "video",
+        "kling": "video",
+        # Audio models
+        "musicgen": "audio",
+        "musicgen_large": "audio",
+        "bark": "audio",
+        "whisper": "audio",
+    }
+
+    # Shorter TTL for fallback cache to retry API sooner
+    FALLBACK_TTL = 60  # 1 minute
+
     def __init__(self, ttl_seconds: int = DEFAULT_TTL):
         self._cache: Optional[ModelCache] = None
         self._lock = asyncio.Lock()
@@ -139,6 +161,14 @@ class ModelRegistry:
             data = await self._fetch_models_page(cursor=cursor, category=category)
             # API returns "models" array, not "items"
             models = data.get("models", [])
+
+            # Log warning if API returns empty or unexpected response
+            if not models and not all_models:
+                logger.warning(
+                    "API returned empty models list - response keys: %s",
+                    list(data.keys()),
+                )
+
             all_models.extend(models)
 
             cursor = data.get("next_cursor")
@@ -257,33 +287,27 @@ class ModelRegistry:
             )
             self._cache = self._create_fallback_cache()
 
-    # Legacy alias category mappings for fallback
-    LEGACY_ALIAS_CATEGORIES: Dict[str, str] = {
-        # Image models
-        "flux_schnell": "image",
-        "flux_dev": "image",
-        "flux_pro": "image",
-        "sdxl": "image",
-        "stable_diffusion": "image",
-        # Video models
-        "svd": "video",
-        "animatediff": "video",
-        "kling": "video",
-        # Audio models
-        "musicgen": "audio",
-        "musicgen_large": "audio",
-        "bark": "audio",
-        "whisper": "audio",
-    }
-
     def _create_fallback_cache(self) -> ModelCache:
         """Create a fallback cache with legacy aliases converted to FalModel objects."""
         models: Dict[str, FalModel] = {}
         by_category: Dict[str, List[str]] = {"image": [], "video": [], "audio": []}
 
         for alias, model_id in self.LEGACY_ALIASES.items():
-            # Create a FalModel for each legacy alias
-            category = self.LEGACY_ALIAS_CATEGORIES.get(alias, "image")
+            # Skip if we already processed this model_id (handles duplicate aliases)
+            if model_id in models:
+                continue
+
+            # Get category with warning for missing mappings
+            category = self.LEGACY_ALIAS_CATEGORIES.get(alias)
+            if category is None:
+                logger.warning(
+                    "Missing category mapping for legacy alias '%s' (model: %s) "
+                    "- defaulting to 'image'",
+                    alias,
+                    model_id,
+                )
+                category = "image"
+
             model = FalModel(
                 id=model_id,
                 name=alias.replace(
@@ -301,7 +325,7 @@ class ModelRegistry:
             aliases=dict(self.LEGACY_ALIASES),
             by_category=by_category,
             fetched_at=time.time(),
-            ttl_seconds=self._ttl_seconds,
+            ttl_seconds=self.FALLBACK_TTL,  # Shorter TTL to retry API sooner
         )
 
     def is_full_model_id(self, model_input: str) -> bool:
