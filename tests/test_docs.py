@@ -236,7 +236,7 @@ def test_internal_links():
 def test_assets_directory_structure():
     """Test that assets directory has proper structure"""
     assert os.path.exists("docs/assets")
-    assert os.path.exists("docs/assets/css")
+    assert os.path.exists("docs/assets/main.scss")  # Main stylesheet for minima theme
     assert os.path.exists("docs/assets/js")
     assert os.path.exists("docs/assets/img")
 
