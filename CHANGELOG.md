@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v1.5.1 (2025-12-20)
+
+### Bug Fixes
+
+- Add timeout and error handling to subscribe_async calls
+  ([#51](https://github.com/raveenb/fal-mcp-server/pull/51),
+  [`bfa5b51`](https://github.com/raveenb/fal-mcp-server/commit/bfa5b51bb44e2f9281c42a2f3bf80888746e34ef))
+
+### Refactoring
+
+- Use subscribe_async for video/music generation
+  ([#51](https://github.com/raveenb/fal-mcp-server/pull/51),
+  [`bfa5b51`](https://github.com/raveenb/fal-mcp-server/commit/bfa5b51bb44e2f9281c42a2f3bf80888746e34ef))
+
+
 ## v1.5.0 (2025-12-20)
 
 ### Features
