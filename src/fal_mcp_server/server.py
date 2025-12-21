@@ -918,7 +918,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             if "seed" in arguments:
                 img2img_args["seed"] = arguments["seed"]
             if "enable_safety_checker" in arguments:
-                img2img_args["enable_safety_checker"] = arguments["enable_safety_checker"]
+                img2img_args["enable_safety_checker"] = arguments[
+                    "enable_safety_checker"
+                ]
             if "output_format" in arguments:
                 img2img_args["output_format"] = arguments["output_format"]
 

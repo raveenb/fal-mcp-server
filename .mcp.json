@@ -1,11 +1,5 @@
 {
   "mcpServers": {
-    "context7": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
-      "env": {}
-    },
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"]
@@ -38,10 +32,14 @@
     },
     "fal-ai": {
       "command": "uvx",
-      "args": ["--from", "fal-mcp-server", "fal-mcp"],
+      "args": ["--from", "fal-mcp-server==1.8.0", "fal-mcp"],
       "env": {
         "FAL_KEY": "${FAL_KEY}"
       }
+    },
+    "fal-ai-docker": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:8080/sse"]
     }
   }
 }
