@@ -122,6 +122,50 @@ class FalMCPServer:
                     },
                 ),
                 Tool(
+                    name="generate_image_from_image",
+                    description="Transform an existing image into a new image based on a prompt. Use for style transfer, editing, variations, and more. Use upload_file first if you have a local image.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "image_url": {
+                                "type": "string",
+                                "description": "URL of the source image to transform (use upload_file for local images)",
+                            },
+                            "prompt": {
+                                "type": "string",
+                                "description": "Text description of desired transformation (e.g., 'Transform into a watercolor painting')",
+                            },
+                            "model": {
+                                "type": "string",
+                                "default": "fal-ai/flux/dev/image-to-image",
+                                "description": "Image-to-image model. Options: fal-ai/flux/dev/image-to-image, fal-ai/flux-2/edit",
+                            },
+                            "strength": {
+                                "type": "number",
+                                "default": 0.75,
+                                "minimum": 0.0,
+                                "maximum": 1.0,
+                                "description": "How much to transform (0=keep original, 1=ignore original)",
+                            },
+                            "num_images": {
+                                "type": "integer",
+                                "default": 1,
+                                "minimum": 1,
+                                "maximum": 4,
+                            },
+                            "negative_prompt": {
+                                "type": "string",
+                                "description": "What to avoid in the output image",
+                            },
+                            "seed": {
+                                "type": "integer",
+                                "description": "Seed for reproducible generation",
+                            },
+                        },
+                        "required": ["image_url", "prompt"],
+                    },
+                ),
+                Tool(
                     name="generate_video",
                     description="Generate videos from text prompts (text-to-video) or from images (image-to-video). Use list_models with category='video' to discover available models.",
                     inputSchema={
@@ -329,6 +373,81 @@ class FalMCPServer:
                         for i, url in enumerate(urls, 1):
                             response += f"Image {i}: {url}\n"
                         return [TextContent(type="text", text=response)]
+
+                # Image-to-image transformation (fast operation)
+                elif name == "generate_image_from_image":
+                    model_input = arguments.get(
+                        "model", "fal-ai/flux/dev/image-to-image"
+                    )
+                    try:
+                        model_id = await registry.resolve_model_id(model_input)
+                    except ValueError as e:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ {e}. Use list_models to see available options.",
+                            )
+                        ]
+
+                    # Build arguments for img2img
+                    fal_args: Dict[str, Any] = {
+                        "image_url": arguments["image_url"],
+                        "prompt": arguments["prompt"],
+                        "strength": arguments.get("strength", 0.75),
+                        "num_images": arguments.get("num_images", 1),
+                    }
+
+                    # Add optional parameters
+                    if "negative_prompt" in arguments:
+                        fal_args["negative_prompt"] = arguments["negative_prompt"]
+                    if "seed" in arguments:
+                        fal_args["seed"] = arguments["seed"]
+
+                    logger.info(
+                        "Starting image-to-image transformation with %s from %s",
+                        model_id,
+                        (
+                            arguments["image_url"][:50] + "..."
+                            if len(arguments["image_url"]) > 50
+                            else arguments["image_url"]
+                        ),
+                    )
+
+                    try:
+                        # Use native async API for fast image transformation
+                        result = await fal_client.run_async(
+                            model_id, arguments=fal_args
+                        )
+
+                        images = result.get("images", [])
+                        if images:
+                            urls = [img["url"] for img in images]
+                            logger.info(
+                                "Successfully transformed image with %s: %s",
+                                model_id,
+                                urls[0][:50] + "...",
+                            )
+                            response = f"🎨 Transformed image with {model_id}:\n\n"
+                            for i, url in enumerate(urls, 1):
+                                response += f"Image {i}: {url}\n"
+                            return [TextContent(type="text", text=response)]
+                        else:
+                            return [
+                                TextContent(
+                                    type="text",
+                                    text="❌ Image transformation completed but no images returned",
+                                )
+                            ]
+                    except Exception as img2img_error:
+                        logger.exception(
+                            "Image-to-image transformation failed: %s", img2img_error
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Image transformation failed: {str(img2img_error)}",
+                            )
+                        ]
 
                 # Long operations using queue API
                 elif name == "generate_video":
