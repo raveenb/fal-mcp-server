@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v1.8.0 (2025-12-21)
+
+### Bug Fixes
+
+- Address PR review feedback for generate_image_structured
+  ([#57](https://github.com/raveenb/fal-mcp-server/pull/57),
+  [`8b52593`](https://github.com/raveenb/fal-mcp-server/commit/8b5259390cbba9c73988462610f3c5daac5b08fb))
+
+### Features
+
+- Add generate_image_structured tool for detailed AI-friendly prompts
+  ([#57](https://github.com/raveenb/fal-mcp-server/pull/57),
+  [`8b52593`](https://github.com/raveenb/fal-mcp-server/commit/8b5259390cbba9c73988462610f3c5daac5b08fb))
+
+
 ## v1.7.0 (2025-12-20)
 
 ### Bug Fixes
