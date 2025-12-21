@@ -185,6 +185,17 @@ async def test_generate_video_tool_schema():
     assert props["duration"]["minimum"] == 2
     assert props["duration"]["maximum"] == 10
 
+    # Check additional optional parameters
+    assert "aspect_ratio" in props
+    assert props["aspect_ratio"]["default"] == "16:9"
+
+    assert "negative_prompt" in props
+    assert props["negative_prompt"]["type"] == "string"
+
+    assert "cfg_scale" in props
+    assert props["cfg_scale"]["type"] == "number"
+    assert props["cfg_scale"]["default"] == 0.5
+
     # Both image_url and prompt are required
     assert "image_url" in video_tool.inputSchema["required"]
     assert "prompt" in video_tool.inputSchema["required"]

@@ -321,6 +321,20 @@ async def list_tools() -> List[Tool]:
                         "maximum": 10,
                         "description": "Video duration in seconds",
                     },
+                    "aspect_ratio": {
+                        "type": "string",
+                        "default": "16:9",
+                        "description": "Video aspect ratio (e.g., '16:9', '9:16', '1:1')",
+                    },
+                    "negative_prompt": {
+                        "type": "string",
+                        "description": "What to avoid in the video (e.g., 'blur, distort, low quality')",
+                    },
+                    "cfg_scale": {
+                        "type": "number",
+                        "default": 0.5,
+                        "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
+                    },
                 },
                 "required": ["image_url", "prompt"],
             },
@@ -783,6 +797,12 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             }
             if "duration" in arguments:
                 fal_args["duration"] = arguments["duration"]
+            if "aspect_ratio" in arguments:
+                fal_args["aspect_ratio"] = arguments["aspect_ratio"]
+            if "negative_prompt" in arguments:
+                fal_args["negative_prompt"] = arguments["negative_prompt"]
+            if "cfg_scale" in arguments:
+                fal_args["cfg_scale"] = arguments["cfg_scale"]
 
             # Use subscribe_async with timeout protection
             logger.info("Starting video generation with %s", model_id)
