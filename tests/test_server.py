@@ -75,6 +75,7 @@ async def test_list_tools():
     assert "get_pricing" in tool_names
     assert "get_usage" in tool_names
     assert "generate_image" in tool_names
+    assert "generate_image_structured" in tool_names
     assert "generate_video" in tool_names
     assert "generate_music" in tool_names
 
@@ -107,6 +108,52 @@ async def test_get_usage_tool_schema():
     assert "models" in usage_tool.inputSchema["properties"]
     # No required fields - all parameters are optional
     assert usage_tool.inputSchema["required"] == []
+
+
+@pytest.mark.asyncio
+async def test_generate_image_structured_tool_schema():
+    """Test that generate_image_structured tool has correct schema"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    structured_tool = next(t for t in tools if t.name == "generate_image_structured")
+
+    assert structured_tool is not None
+    props = structured_tool.inputSchema["properties"]
+
+    # Check required structured prompt fields
+    assert "scene" in props
+    assert props["scene"]["type"] == "string"
+
+    # Check optional structured fields
+    assert "subjects" in props
+    assert props["subjects"]["type"] == "array"
+
+    assert "style" in props
+    assert "color_palette" in props
+    assert "lighting" in props
+    assert "mood" in props
+    assert "background" in props
+    assert "composition" in props
+    assert "camera" in props
+    assert "effects" in props
+
+    # Check camera sub-properties
+    camera_props = props["camera"]["properties"]
+    assert "angle" in camera_props
+    assert "distance" in camera_props
+    assert "lens" in camera_props
+    assert "f_number" in camera_props
+    assert "iso" in camera_props
+
+    # Check generation parameters
+    assert "model" in props
+    assert "image_size" in props
+    assert "num_images" in props
+    assert "seed" in props
+
+    # Only scene is required
+    assert structured_tool.inputSchema["required"] == ["scene"]
 
 
 @pytest.mark.asyncio
