@@ -905,7 +905,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 ]
 
             # Both image_url and prompt are required
-            fal_args: Dict[str, Any] = {
+            img2img_args: Dict[str, Any] = {
                 "image_url": arguments["image_url"],
                 "prompt": arguments["prompt"],
                 "strength": arguments.get("strength", 0.75),
@@ -914,13 +914,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
             # Add optional parameters
             if "negative_prompt" in arguments:
-                fal_args["negative_prompt"] = arguments["negative_prompt"]
+                img2img_args["negative_prompt"] = arguments["negative_prompt"]
             if "seed" in arguments:
-                fal_args["seed"] = arguments["seed"]
+                img2img_args["seed"] = arguments["seed"]
             if "enable_safety_checker" in arguments:
-                fal_args["enable_safety_checker"] = arguments["enable_safety_checker"]
+                img2img_args["enable_safety_checker"] = arguments["enable_safety_checker"]
             if "output_format" in arguments:
-                fal_args["output_format"] = arguments["output_format"]
+                img2img_args["output_format"] = arguments["output_format"]
 
             logger.info(
                 "Starting image-to-image transformation with %s from %s",
@@ -934,7 +934,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
             # Use async API for fast image transformation
             try:
-                result = await fal_client.run_async(model_id, arguments=fal_args)
+                result = await fal_client.run_async(model_id, arguments=img2img_args)
             except Exception as e:
                 logger.exception("Image-to-image transformation failed: %s", e)
                 return [
@@ -970,7 +970,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 ]
 
             logger.info("Successfully transformed image with %s: %s", model_id, urls[0])
-            response = f"🎨 Transformed image with {model_id} (strength={fal_args['strength']}):\n\n"
+            response = f"🎨 Transformed image with {model_id} (strength={img2img_args['strength']}):\n\n"
             for i, url in enumerate(urls, 1):
                 response += f"Image {i}: {url}\n"
             return [TextContent(type="text", text=response)]
