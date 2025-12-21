@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.9.0 (2025-12-21)
+
+### Bug Fixes
+
+- Address PR review issues for upload_file tool
+  ([#76](https://github.com/raveenb/fal-mcp-server/pull/76),
+  [`833d76d`](https://github.com/raveenb/fal-mcp-server/commit/833d76d75e2c900995cc83849c33244906c4166b))
+
+### Features
+
+- Add upload_file tool for uploading local files (#64)
+  ([#76](https://github.com/raveenb/fal-mcp-server/pull/76),
+  [`833d76d`](https://github.com/raveenb/fal-mcp-server/commit/833d76d75e2c900995cc83849c33244906c4166b))
+
+- Add upload_file tool for uploading local files to Fal.ai storage
+  ([#76](https://github.com/raveenb/fal-mcp-server/pull/76),
+  [`833d76d`](https://github.com/raveenb/fal-mcp-server/commit/833d76d75e2c900995cc83849c33244906c4166b))
+
+
 ## v1.8.2 (2025-12-21)
 
 ### Bug Fixes
