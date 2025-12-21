@@ -2,6 +2,7 @@
 """Fal.ai MCP Server with native async API and queue support"""
 
 import asyncio
+import json
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
@@ -151,6 +152,147 @@ async def list_tools() -> List[Tool]:
                     },
                 },
                 "required": ["prompt"],
+            },
+        ),
+        Tool(
+            name="generate_image_structured",
+            description="Generate images with detailed structured prompts for precise control over composition, style, lighting, and subjects. Ideal for AI agents that need fine-grained control.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "scene": {
+                        "type": "string",
+                        "description": "Overall scene description - the main subject and setting",
+                    },
+                    "subjects": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "description": "Type of subject (e.g., 'person', 'building', 'animal')",
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "Detailed description of the subject",
+                                },
+                                "pose": {
+                                    "type": "string",
+                                    "description": "Pose or action of the subject",
+                                },
+                                "position": {
+                                    "type": "string",
+                                    "enum": ["foreground", "midground", "background"],
+                                    "description": "Position in the composition",
+                                },
+                            },
+                        },
+                        "description": "List of subjects with their positions and descriptions",
+                    },
+                    "style": {
+                        "type": "string",
+                        "description": "Art style (e.g., 'Digital art painting', 'Photorealistic', 'Watercolor', 'Oil painting')",
+                    },
+                    "color_palette": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Hex color codes for the palette (e.g., ['#000033', '#6A0DAD', '#FFFFFF'])",
+                    },
+                    "lighting": {
+                        "type": "string",
+                        "description": "Lighting description (e.g., 'Soft golden hour lighting', 'Dramatic chiaroscuro')",
+                    },
+                    "mood": {
+                        "type": "string",
+                        "description": "Emotional mood of the image (e.g., 'Serene', 'Dramatic', 'Mysterious')",
+                    },
+                    "background": {
+                        "type": "string",
+                        "description": "Background description",
+                    },
+                    "composition": {
+                        "type": "string",
+                        "description": "Compositional rules (e.g., 'Rule of thirds', 'Centered', 'Golden ratio')",
+                    },
+                    "camera": {
+                        "type": "object",
+                        "properties": {
+                            "angle": {
+                                "type": "string",
+                                "description": "Camera angle (e.g., 'Low angle', 'Eye level', 'Bird's eye')",
+                            },
+                            "distance": {
+                                "type": "string",
+                                "description": "Shot distance (e.g., 'Close-up', 'Medium shot', 'Wide shot')",
+                            },
+                            "focus": {
+                                "type": "string",
+                                "description": "Focus description (e.g., 'Sharp focus on subject, blurred background')",
+                            },
+                            "lens": {
+                                "type": "string",
+                                "description": "Lens type (e.g., 'Wide-angle', '50mm portrait', 'Telephoto')",
+                            },
+                            "f_number": {
+                                "type": "string",
+                                "description": "Aperture (e.g., 'f/1.8', 'f/5.6', 'f/11')",
+                            },
+                            "iso": {
+                                "type": "integer",
+                                "description": "ISO setting (e.g., 100, 400, 800)",
+                            },
+                        },
+                        "description": "Camera settings for photographic style control",
+                    },
+                    "effects": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Visual effects (e.g., ['Bokeh', 'Light rays', 'Lens flare', 'Motion blur'])",
+                    },
+                    "negative_prompt": {
+                        "type": "string",
+                        "description": "What to avoid in the image (e.g., 'blurry, low quality, distorted')",
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": "flux_schnell",
+                        "description": "Model ID or alias. Use list_models to see options.",
+                    },
+                    "image_size": {
+                        "type": "string",
+                        "enum": [
+                            "square",
+                            "landscape_4_3",
+                            "landscape_16_9",
+                            "portrait_3_4",
+                            "portrait_9_16",
+                        ],
+                        "default": "landscape_16_9",
+                    },
+                    "num_images": {
+                        "type": "integer",
+                        "default": 1,
+                        "minimum": 1,
+                        "maximum": 4,
+                    },
+                    "seed": {
+                        "type": "integer",
+                        "description": "Seed for reproducible generation",
+                    },
+                    "enable_safety_checker": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Enable safety checker to filter inappropriate content",
+                    },
+                    "output_format": {
+                        "type": "string",
+                        "enum": ["jpeg", "png", "webp"],
+                        "default": "png",
+                        "description": "Output image format",
+                    },
+                },
+                "required": ["scene"],
             },
         ),
         Tool(
@@ -500,6 +642,123 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 for i, url in enumerate(urls, 1):
                     response += f"Image {i}: {url}\n"
                 return [TextContent(type="text", text=response)]
+
+        # Structured image generation with JSON prompt
+        elif name == "generate_image_structured":
+            model_input = arguments.get("model", "flux_schnell")
+            try:
+                model_id = await registry.resolve_model_id(model_input)
+            except ValueError as e:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ {e}. Use list_models to see available options.",
+                    )
+                ]
+
+            # Build structured JSON prompt from arguments
+            structured_prompt: Dict[str, Any] = {}
+
+            # Required field
+            structured_prompt["scene"] = arguments["scene"]
+
+            # Optional structured fields
+            if "subjects" in arguments:
+                structured_prompt["subjects"] = arguments["subjects"]
+            if "style" in arguments:
+                structured_prompt["style"] = arguments["style"]
+            if "color_palette" in arguments:
+                structured_prompt["color_palette"] = arguments["color_palette"]
+            if "lighting" in arguments:
+                structured_prompt["lighting"] = arguments["lighting"]
+            if "mood" in arguments:
+                structured_prompt["mood"] = arguments["mood"]
+            if "background" in arguments:
+                structured_prompt["background"] = arguments["background"]
+            if "composition" in arguments:
+                structured_prompt["composition"] = arguments["composition"]
+            if "camera" in arguments:
+                structured_prompt["camera"] = arguments["camera"]
+            if "effects" in arguments:
+                structured_prompt["effects"] = arguments["effects"]
+
+            # Convert structured prompt to JSON string
+            json_prompt = json.dumps(structured_prompt, indent=2)
+
+            fal_args = {
+                "prompt": json_prompt,
+                "image_size": arguments.get("image_size", "landscape_16_9"),
+                "num_images": arguments.get("num_images", 1),
+            }
+
+            # Add optional generation parameters
+            if "negative_prompt" in arguments:
+                fal_args["negative_prompt"] = arguments["negative_prompt"]
+            if "seed" in arguments:
+                fal_args["seed"] = arguments["seed"]
+            if "enable_safety_checker" in arguments:
+                fal_args["enable_safety_checker"] = arguments["enable_safety_checker"]
+            if "output_format" in arguments:
+                fal_args["output_format"] = arguments["output_format"]
+
+            # Use native async API for fast image generation with timeout protection
+            logger.info("Starting structured image generation with %s", model_id)
+            try:
+                result = await asyncio.wait_for(
+                    fal_client.run_async(model_id, arguments=fal_args),
+                    timeout=60,  # 1 minute timeout for image generation
+                )
+            except asyncio.TimeoutError:
+                logger.error("Structured image generation timed out for %s", model_id)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image generation timed out after 60 seconds with {model_id}. Please try again.",
+                    )
+                ]
+
+            # Check for error in response (consistent with generate_video/generate_music)
+            if "error" in result:
+                error_msg = result.get("error", "Unknown error")
+                logger.error(
+                    "Structured image generation failed for %s: %s", model_id, error_msg
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image generation failed: {error_msg}",
+                    )
+                ]
+
+            images = result.get("images", [])
+            if not images:
+                logger.warning(
+                    "Structured image generation returned no images. Model: %s",
+                    model_id,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ No images were generated by {model_id}. The prompt may have been filtered or the request format was invalid.",
+                    )
+                ]
+
+            # Extract URLs safely
+            try:
+                urls = [img["url"] for img in images]
+            except (KeyError, TypeError) as e:
+                logger.error("Malformed image response from %s: %s", model_id, e)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image generation completed but response was malformed: {e}",
+                    )
+                ]
+
+            response = f"🎨 Generated {len(urls)} image(s) with {model_id} (structured prompt):\n\n"
+            for i, url in enumerate(urls, 1):
+                response += f"Image {i}: {url}\n"
+            return [TextContent(type="text", text=response)]
 
         # Long operations using subscribe_async (handles queue automatically)
         elif name == "generate_video":
