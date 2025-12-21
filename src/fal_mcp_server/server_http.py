@@ -152,20 +152,38 @@ async def list_tools() -> List[Tool]:
                         "type": "string",
                         "description": "Starting image URL (for image-to-video)",
                     },
+                    "prompt": {
+                        "type": "string",
+                        "description": "Text description to guide the video animation (e.g., 'camera slowly pans right, gentle breeze moves the leaves')",
+                    },
                     "model": {
                         "type": "string",
-                        "default": "svd",
-                        "description": "Model ID (e.g., 'fal-ai/kling-video') or alias (e.g., 'svd'). Use list_models to see options.",
+                        "default": "fal-ai/wan-i2v",
+                        "description": "Model ID (e.g., 'fal-ai/kling-video/v2.1/standard/image-to-video'). Use list_models to see options.",
                     },
                     "duration": {
                         "type": "integer",
-                        "default": 4,
+                        "default": 5,
                         "minimum": 2,
                         "maximum": 10,
                         "description": "Video duration in seconds",
                     },
+                    "aspect_ratio": {
+                        "type": "string",
+                        "default": "16:9",
+                        "description": "Video aspect ratio (e.g., '16:9', '9:16', '1:1')",
+                    },
+                    "negative_prompt": {
+                        "type": "string",
+                        "description": "What to avoid in the video (e.g., 'blur, distort, low quality')",
+                    },
+                    "cfg_scale": {
+                        "type": "number",
+                        "default": 0.5,
+                        "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
+                    },
                 },
-                "required": ["image_url"],
+                "required": ["image_url", "prompt"],
             },
         ),
         Tool(
@@ -276,7 +294,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
         # Long operations using queue API
         elif name == "generate_video":
-            model_input = arguments.get("model", "svd")
+            model_input = arguments.get("model", "fal-ai/wan-i2v")
             try:
                 model_id = await registry.resolve_model_id(model_input)
             except ValueError as e:
@@ -287,9 +305,18 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     )
                 ]
 
-            fal_args = {"image_url": arguments["image_url"]}
+            fal_args = {
+                "image_url": arguments["image_url"],
+                "prompt": arguments["prompt"],
+            }
             if "duration" in arguments:
                 fal_args["duration"] = arguments["duration"]
+            if "aspect_ratio" in arguments:
+                fal_args["aspect_ratio"] = arguments["aspect_ratio"]
+            if "negative_prompt" in arguments:
+                fal_args["negative_prompt"] = arguments["negative_prompt"]
+            if "cfg_scale" in arguments:
+                fal_args["cfg_scale"] = arguments["cfg_scale"]
 
             # Submit to queue for processing
             handle = await fal_client.submit_async(model_id, arguments=fal_args)
