@@ -934,15 +934,44 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 ),
             )
 
-            # Use async API for fast image transformation
+            # Use async API with timeout protection for fast image transformation
             try:
-                result = await fal_client.run_async(model_id, arguments=img2img_args)
+                result = await asyncio.wait_for(
+                    fal_client.run_async(model_id, arguments=img2img_args),
+                    timeout=60,
+                )
+            except asyncio.TimeoutError:
+                logger.error(
+                    "Image-to-image transformation timed out after 60s. Model: %s",
+                    model_id,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image transformation timed out after 60 seconds with {model_id}. Please try again.",
+                    )
+                ]
             except Exception as e:
                 logger.exception("Image-to-image transformation failed: %s", e)
                 return [
                     TextContent(
                         type="text",
                         text=f"❌ Image transformation failed: {e}",
+                    )
+                ]
+
+            # Check for error in response
+            if "error" in result:
+                error_msg = result.get("error", "Unknown error")
+                logger.error(
+                    "Image-to-image transformation failed for %s: %s",
+                    model_id,
+                    error_msg,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image transformation failed: {error_msg}",
                     )
                 ]
 
