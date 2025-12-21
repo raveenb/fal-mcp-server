@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.8.2 (2025-12-21)
+
+### Bug Fixes
+
+- Make image_url optional in generate_video for text-to-video support
+  ([#67](https://github.com/raveenb/fal-mcp-server/pull/67),
+  [`5f27d5f`](https://github.com/raveenb/fal-mcp-server/commit/5f27d5f98f9d94341225571f8f7b3fa8d15b9475))
+
+
 ## v1.8.1 (2025-12-21)
 
 ### Bug Fixes
