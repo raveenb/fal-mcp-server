@@ -218,10 +218,6 @@ async def test_upload_file_tool_schema():
     assert "file_path" in props
     assert props["file_path"]["type"] == "string"
 
-    # Check optional content_type parameter
-    assert "content_type" in props
-    assert props["content_type"]["type"] == "string"
-
     # Only file_path is required
     assert upload_tool.inputSchema["required"] == ["file_path"]
 

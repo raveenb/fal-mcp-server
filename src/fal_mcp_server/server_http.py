@@ -222,10 +222,6 @@ async def list_tools() -> List[Tool]:
                         "type": "string",
                         "description": "Absolute path to the local file to upload (e.g., '/path/to/image.png')",
                     },
-                    "content_type": {
-                        "type": "string",
-                        "description": "Optional MIME type of the file (e.g., 'image/png', 'video/mp4'). Auto-detected if not specified.",
-                    },
                 },
                 "required": ["file_path"],
             },
@@ -467,21 +463,22 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     )
                 ]
 
-            # Get file size for logging
-            file_size = os.path.getsize(file_path)
-            file_size_mb = file_size / (1024 * 1024)
-            logger.info("Uploading file: %s (%.2f MB)", file_path, file_size_mb)
-
             try:
+                # Get file size for logging (inside try to handle race conditions)
+                file_size = os.path.getsize(file_path)
+                file_size_mb = file_size / (1024 * 1024)
+                logger.info("Uploading file: %s (%.2f MB)", file_path, file_size_mb)
+
                 # Upload file to Fal.ai storage
                 # fal_client.upload_file is synchronous, run in thread pool
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
                 url = await loop.run_in_executor(
                     None, fal_client.upload_file, file_path
                 )
 
                 # Get filename for display
                 filename = os.path.basename(file_path)
+                logger.info("Successfully uploaded %s to %s", file_path, url)
 
                 return [
                     TextContent(
@@ -489,8 +486,18 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         text=f"📤 Uploaded `{filename}` ({file_size_mb:.2f} MB)\n\n**URL:** {url}\n\nThis URL can now be used with other Fal.ai tools.",
                     )
                 ]
+            except OSError as e:
+                logger.error("Cannot access file %s: %s", file_path, e)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Cannot access file: {file_path}. {str(e)}",
+                    )
+                ]
             except Exception as upload_error:
-                logger.exception("File upload failed: %s", upload_error)
+                logger.exception(
+                    "Unexpected error during file upload: %s", upload_error
+                )
                 return [
                     TextContent(
                         type="text",
