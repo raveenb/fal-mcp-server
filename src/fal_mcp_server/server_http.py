@@ -600,16 +600,16 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             )
             response += "Processing (this may take 30-60 seconds)...\n"
 
-            video_result: Optional[Dict[str, Any]] = await wait_for_queue_result(
+            i2v_result: Optional[Dict[str, Any]] = await wait_for_queue_result(
                 handle, timeout=180
             )
 
-            if video_result is not None and "error" not in video_result:
-                video_dict = video_result.get("video", {})
+            if i2v_result is not None and "error" not in i2v_result:
+                video_dict = i2v_result.get("video", {})
                 if isinstance(video_dict, dict):
                     video_url = video_dict.get("url")
                 else:
-                    video_url = video_result.get("url")
+                    video_url = i2v_result.get("url")
                 if video_url:
                     logger.info("Successfully generated video: %s", video_url)
                     return [
@@ -620,8 +620,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     ]
             else:
                 error_msg = (
-                    video_result.get("error", "Unknown error")
-                    if video_result
+                    i2v_result.get("error", "Unknown error")
+                    if i2v_result
                     else "Unknown error"
                 )
                 return [
