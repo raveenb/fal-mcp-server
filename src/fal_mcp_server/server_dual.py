@@ -123,22 +123,22 @@ class FalMCPServer:
                 ),
                 Tool(
                     name="generate_video",
-                    description="Generate videos from images. Use list_models with category='video' to discover available models.",
+                    description="Generate videos from text prompts (text-to-video) or from images (image-to-video). Use list_models with category='video' to discover available models.",
                     inputSchema={
                         "type": "object",
                         "properties": {
-                            "image_url": {
-                                "type": "string",
-                                "description": "Starting image URL (for image-to-video)",
-                            },
                             "prompt": {
                                 "type": "string",
-                                "description": "Text description to guide the video animation (e.g., 'camera slowly pans right, gentle breeze moves the leaves')",
+                                "description": "Text description for the video (e.g., 'A slow-motion drone shot of Tokyo at night')",
+                            },
+                            "image_url": {
+                                "type": "string",
+                                "description": "Starting image URL for image-to-video models. Optional for text-to-video models.",
                             },
                             "model": {
                                 "type": "string",
                                 "default": "fal-ai/wan-i2v",
-                                "description": "Model ID (e.g., 'fal-ai/kling-video/v2.1/standard/image-to-video'). Use list_models to see options.",
+                                "description": "Model ID. Use 'fal-ai/kling-video/v2/master/text-to-video' for text-only, or image-to-video models like 'fal-ai/wan-i2v'.",
                             },
                             "duration": {
                                 "type": "integer",
@@ -162,7 +162,7 @@ class FalMCPServer:
                                 "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
                             },
                         },
-                        "required": ["image_url", "prompt"],
+                        "required": ["prompt"],
                     },
                 ),
                 Tool(
@@ -286,9 +286,11 @@ class FalMCPServer:
                         ]
 
                     fal_args = {
-                        "image_url": arguments["image_url"],
                         "prompt": arguments["prompt"],
                     }
+                    # image_url is optional - only needed for image-to-video models
+                    if "image_url" in arguments:
+                        fal_args["image_url"] = arguments["image_url"]
                     if "duration" in arguments:
                         fal_args["duration"] = arguments["duration"]
                     if "aspect_ratio" in arguments:

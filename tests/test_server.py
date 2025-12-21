@@ -160,7 +160,7 @@ async def test_generate_image_structured_tool_schema():
 
 @pytest.mark.asyncio
 async def test_generate_video_tool_schema():
-    """Test that generate_video tool has correct schema with prompt parameter"""
+    """Test that generate_video tool has correct schema supporting both text-to-video and image-to-video"""
     from fal_mcp_server.server import list_tools
 
     tools = await list_tools()
@@ -169,12 +169,13 @@ async def test_generate_video_tool_schema():
     assert video_tool is not None
     props = video_tool.inputSchema["properties"]
 
-    # Check required fields
-    assert "image_url" in props
-    assert props["image_url"]["type"] == "string"
-
+    # Check prompt (required for all video generation)
     assert "prompt" in props
     assert props["prompt"]["type"] == "string"
+
+    # Check image_url (optional - only for image-to-video models)
+    assert "image_url" in props
+    assert props["image_url"]["type"] == "string"
 
     # Check optional fields
     assert "model" in props
@@ -196,9 +197,9 @@ async def test_generate_video_tool_schema():
     assert props["cfg_scale"]["type"] == "number"
     assert props["cfg_scale"]["default"] == 0.5
 
-    # Both image_url and prompt are required
-    assert "image_url" in video_tool.inputSchema["required"]
-    assert "prompt" in video_tool.inputSchema["required"]
+    # Only prompt is required (image_url is optional for text-to-video)
+    assert video_tool.inputSchema["required"] == ["prompt"]
+    assert "image_url" not in video_tool.inputSchema["required"]
 
 
 @pytest.mark.asyncio
