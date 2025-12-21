@@ -182,6 +182,17 @@ async def list_tools() -> List[Tool]:
                         "type": "integer",
                         "description": "Seed for reproducible generation",
                     },
+                    "enable_safety_checker": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Enable safety checker to filter inappropriate content",
+                    },
+                    "output_format": {
+                        "type": "string",
+                        "enum": ["jpeg", "png", "webp"],
+                        "default": "png",
+                        "description": "Output image format",
+                    },
                 },
                 "required": ["image_url", "prompt"],
             },
@@ -420,6 +431,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 fal_args["negative_prompt"] = arguments["negative_prompt"]
             if "seed" in arguments:
                 fal_args["seed"] = arguments["seed"]
+            if "enable_safety_checker" in arguments:
+                fal_args["enable_safety_checker"] = arguments["enable_safety_checker"]
+            if "output_format" in arguments:
+                fal_args["output_format"] = arguments["output_format"]
 
             logger.info(
                 "Starting image-to-image transformation with %s from %s",
@@ -432,28 +447,72 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             )
 
             try:
-                # Use native async API for fast image transformation
-                result = await fal_client.run_async(model_id, arguments=fal_args)
+                # Use native async API with timeout protection
+                result = await asyncio.wait_for(
+                    fal_client.run_async(model_id, arguments=fal_args),
+                    timeout=60,
+                )
+
+                # Check for error in response
+                if "error" in result:
+                    error_msg = result.get("error", "Unknown error")
+                    logger.error(
+                        "Image-to-image transformation failed for %s: %s",
+                        model_id,
+                        error_msg,
+                    )
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"❌ Image transformation failed: {error_msg}",
+                        )
+                    ]
 
                 images = result.get("images", [])
                 if images:
-                    urls = [img["url"] for img in images]
+                    try:
+                        urls = [img["url"] for img in images]
+                    except (KeyError, TypeError) as e:
+                        logger.error(
+                            "Malformed image response from %s: %s", model_id, e
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Image transformation completed but response was malformed: {e}",
+                            )
+                        ]
                     logger.info(
                         "Successfully transformed image with %s: %s",
                         model_id,
-                        urls[0][:50] + "...",
+                        urls[0],
                     )
                     response = f"🎨 Transformed image with {model_id}:\n\n"
                     for i, url in enumerate(urls, 1):
                         response += f"Image {i}: {url}\n"
                     return [TextContent(type="text", text=response)]
                 else:
+                    logger.error(
+                        "Image-to-image transformation returned no images. Response: %s",
+                        result,
+                    )
                     return [
                         TextContent(
                             type="text",
-                            text="❌ Image transformation completed but no images returned",
+                            text="❌ Image transformation completed but no images were returned. Please try again.",
                         )
                     ]
+            except asyncio.TimeoutError:
+                logger.error(
+                    "Image-to-image transformation timed out after 60s. Model: %s",
+                    model_id,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image transformation timed out after 60 seconds with {model_id}. Please try again.",
+                    )
+                ]
             except Exception as img2img_error:
                 logger.exception(
                     "Image-to-image transformation failed: %s", img2img_error
