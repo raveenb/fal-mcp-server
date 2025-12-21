@@ -226,6 +226,50 @@ async def list_tools() -> List[Tool]:
                 "required": ["file_path"],
             },
         ),
+        Tool(
+            name="generate_video_from_image",
+            description="Animate an image into a video. The image serves as the starting frame and the prompt guides the animation. Use upload_file first if you have a local image.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "image_url": {
+                        "type": "string",
+                        "description": "URL of the image to animate (use upload_file for local images)",
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "description": "Text description guiding how to animate the image (e.g., 'camera slowly pans right, gentle breeze moves the leaves')",
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": "fal-ai/wan-i2v",
+                        "description": "Image-to-video model. Options: fal-ai/wan-i2v, fal-ai/kling-video/v2.1/standard/image-to-video",
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "default": 5,
+                        "minimum": 2,
+                        "maximum": 10,
+                        "description": "Video duration in seconds",
+                    },
+                    "aspect_ratio": {
+                        "type": "string",
+                        "default": "16:9",
+                        "description": "Video aspect ratio (e.g., '16:9', '9:16', '1:1')",
+                    },
+                    "negative_prompt": {
+                        "type": "string",
+                        "description": "What to avoid in the video (e.g., 'blur, distort, low quality')",
+                    },
+                    "cfg_scale": {
+                        "type": "number",
+                        "default": 0.5,
+                        "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
+                    },
+                },
+                "required": ["image_url", "prompt"],
+            },
+        ),
     ]
 
 
@@ -502,6 +546,88 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     TextContent(
                         type="text",
                         text=f"❌ Upload failed: {str(upload_error)}",
+                    )
+                ]
+
+        # Image-to-video generation (dedicated tool with required image_url)
+        elif name == "generate_video_from_image":
+            model_input = arguments.get("model", "fal-ai/wan-i2v")
+            try:
+                model_id = await registry.resolve_model_id(model_input)
+            except ValueError as e:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ {e}. Use list_models to see available options.",
+                    )
+                ]
+
+            # Both image_url and prompt are required for this tool
+            fal_args = {
+                "image_url": arguments["image_url"],
+                "prompt": arguments["prompt"],
+            }
+
+            # Add optional parameters
+            if "duration" in arguments:
+                fal_args["duration"] = arguments["duration"]
+            if "aspect_ratio" in arguments:
+                fal_args["aspect_ratio"] = arguments["aspect_ratio"]
+            if "negative_prompt" in arguments:
+                fal_args["negative_prompt"] = arguments["negative_prompt"]
+            if "cfg_scale" in arguments:
+                fal_args["cfg_scale"] = arguments["cfg_scale"]
+
+            logger.info(
+                "Starting image-to-video generation with %s from %s",
+                model_id,
+                (
+                    arguments["image_url"][:50] + "..."
+                    if len(arguments["image_url"]) > 50
+                    else arguments["image_url"]
+                ),
+            )
+
+            # Submit to queue for processing
+            handle = await fal_client.submit_async(model_id, arguments=fal_args)
+            request_id = (
+                handle.request_id if hasattr(handle, "request_id") else str(handle)
+            )
+
+            # Wait for completion with status updates
+            response = (
+                f"⏳ Image-to-video generation queued (ID: {request_id[:8]}...)\n"
+            )
+            response += "Processing (this may take 30-60 seconds)...\n"
+
+            video_result: Optional[Dict[str, Any]] = await wait_for_queue_result(
+                handle, timeout=180
+            )
+
+            if video_result is not None and "error" not in video_result:
+                video_dict = video_result.get("video", {})
+                if isinstance(video_dict, dict):
+                    video_url = video_dict.get("url")
+                else:
+                    video_url = video_result.get("url")
+                if video_url:
+                    logger.info("Successfully generated video: %s", video_url)
+                    return [
+                        TextContent(
+                            type="text",
+                            text=f"🎬 Video generated with {model_id}: {video_url}",
+                        )
+                    ]
+            else:
+                error_msg = (
+                    video_result.get("error", "Unknown error")
+                    if video_result
+                    else "Unknown error"
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image-to-video generation failed: {error_msg}",
                     )
                 ]
 
