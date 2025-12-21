@@ -2,6 +2,38 @@
 
 <!-- version list -->
 
+## v1.11.0 (2025-12-21)
+
+### Bug Fixes
+
+- Add timeout protection and error check to server.py
+  ([#78](https://github.com/raveenb/fal-mcp-server/pull/78),
+  [`69da03d`](https://github.com/raveenb/fal-mcp-server/commit/69da03d874bef3d828ed63e3fee026a8ce4574ea))
+
+- Address PR review findings for generate_image_from_image
+  ([#78](https://github.com/raveenb/fal-mcp-server/pull/78),
+  [`69da03d`](https://github.com/raveenb/fal-mcp-server/commit/69da03d874bef3d828ed63e3fee026a8ce4574ea))
+
+- Rename fal_args to img2img_args to fix mypy no-redef error
+  ([#78](https://github.com/raveenb/fal-mcp-server/pull/78),
+  [`69da03d`](https://github.com/raveenb/fal-mcp-server/commit/69da03d874bef3d828ed63e3fee026a8ce4574ea))
+
+### Code Style
+
+- Run black formatter ([#78](https://github.com/raveenb/fal-mcp-server/pull/78),
+  [`69da03d`](https://github.com/raveenb/fal-mcp-server/commit/69da03d874bef3d828ed63e3fee026a8ce4574ea))
+
+### Features
+
+- Add generate_image_from_image tool for img2img transformation
+  ([#78](https://github.com/raveenb/fal-mcp-server/pull/78),
+  [`69da03d`](https://github.com/raveenb/fal-mcp-server/commit/69da03d874bef3d828ed63e3fee026a8ce4574ea))
+
+- Add generate_image_from_image tool for img2img transformation (#65)
+  ([#78](https://github.com/raveenb/fal-mcp-server/pull/78),
+  [`69da03d`](https://github.com/raveenb/fal-mcp-server/commit/69da03d874bef3d828ed63e3fee026a8ce4574ea))
+
+
 ## v1.10.0 (2025-12-21)
 
 ### Bug Fixes
