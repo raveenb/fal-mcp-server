@@ -77,6 +77,7 @@ async def test_list_tools():
     assert "generate_image" in tool_names
     assert "generate_image_structured" in tool_names
     assert "generate_video" in tool_names
+    assert "generate_video_from_image" in tool_names
     assert "generate_music" in tool_names
     assert "upload_file" in tool_names
 
@@ -201,6 +202,42 @@ async def test_generate_video_tool_schema():
     # Only prompt is required (image_url is optional for text-to-video)
     assert video_tool.inputSchema["required"] == ["prompt"]
     assert "image_url" not in video_tool.inputSchema["required"]
+
+
+@pytest.mark.asyncio
+async def test_generate_video_from_image_tool_schema():
+    """Test that generate_video_from_image tool has correct schema with required image_url"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    video_tool = next(t for t in tools if t.name == "generate_video_from_image")
+
+    assert video_tool is not None
+    props = video_tool.inputSchema["properties"]
+
+    # Check required parameters
+    assert "image_url" in props
+    assert props["image_url"]["type"] == "string"
+
+    assert "prompt" in props
+    assert props["prompt"]["type"] == "string"
+
+    # Check optional parameters
+    assert "model" in props
+    assert props["model"]["default"] == "fal-ai/wan-i2v"
+
+    assert "duration" in props
+    assert props["duration"]["default"] == 5
+
+    assert "aspect_ratio" in props
+    assert props["aspect_ratio"]["default"] == "16:9"
+
+    assert "negative_prompt" in props
+    assert "cfg_scale" in props
+
+    # Both image_url and prompt are required for image-to-video
+    assert "image_url" in video_tool.inputSchema["required"]
+    assert "prompt" in video_tool.inputSchema["required"]
 
 
 @pytest.mark.asyncio
