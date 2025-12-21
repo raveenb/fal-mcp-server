@@ -142,6 +142,7 @@ async def test_generate_image_structured_tool_schema():
     camera_props = props["camera"]["properties"]
     assert "angle" in camera_props
     assert "distance" in camera_props
+    assert "focus" in camera_props
     assert "lens" in camera_props
     assert "f_number" in camera_props
     assert "iso" in camera_props
@@ -151,6 +152,7 @@ async def test_generate_image_structured_tool_schema():
     assert "image_size" in props
     assert "num_images" in props
     assert "seed" in props
+    assert "negative_prompt" in props
 
     # Only scene is required
     assert structured_tool.inputSchema["required"] == ["scene"]
