@@ -78,6 +78,7 @@ async def test_list_tools():
     assert "generate_image_structured" in tool_names
     assert "generate_video" in tool_names
     assert "generate_music" in tool_names
+    assert "upload_file" in tool_names
 
 
 @pytest.mark.asyncio
@@ -200,6 +201,29 @@ async def test_generate_video_tool_schema():
     # Only prompt is required (image_url is optional for text-to-video)
     assert video_tool.inputSchema["required"] == ["prompt"]
     assert "image_url" not in video_tool.inputSchema["required"]
+
+
+@pytest.mark.asyncio
+async def test_upload_file_tool_schema():
+    """Test that upload_file tool has correct schema"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    upload_tool = next(t for t in tools if t.name == "upload_file")
+
+    assert upload_tool is not None
+    props = upload_tool.inputSchema["properties"]
+
+    # Check required file_path parameter
+    assert "file_path" in props
+    assert props["file_path"]["type"] == "string"
+
+    # Check optional content_type parameter
+    assert "content_type" in props
+    assert props["content_type"]["type"] == "string"
+
+    # Only file_path is required
+    assert upload_tool.inputSchema["required"] == ["file_path"]
 
 
 @pytest.mark.asyncio

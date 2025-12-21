@@ -212,6 +212,24 @@ async def list_tools() -> List[Tool]:
                 "required": ["prompt"],
             },
         ),
+        Tool(
+            name="upload_file",
+            description="Upload a local file to Fal.ai storage and get a URL. Use this to upload images, videos, or audio files that can then be used with other Fal.ai tools (e.g., image-to-video, audio transform).",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_path": {
+                        "type": "string",
+                        "description": "Absolute path to the local file to upload (e.g., '/path/to/image.png')",
+                    },
+                    "content_type": {
+                        "type": "string",
+                        "description": "Optional MIME type of the file (e.g., 'image/png', 'video/mp4'). Auto-detected if not specified.",
+                    },
+                },
+                "required": ["file_path"],
+            },
+        ),
     ]
 
 
@@ -418,6 +436,65 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     TextContent(
                         type="text",
                         text=f"❌ Music generation failed: {error_msg}",
+                    )
+                ]
+
+        # File upload tool
+        elif name == "upload_file":
+            file_path = arguments.get("file_path")
+            if not file_path:
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ file_path is required",
+                    )
+                ]
+
+            # Validate file exists
+            if not os.path.exists(file_path):
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ File not found: {file_path}",
+                    )
+                ]
+
+            if not os.path.isfile(file_path):
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Path is not a file: {file_path}",
+                    )
+                ]
+
+            # Get file size for logging
+            file_size = os.path.getsize(file_path)
+            file_size_mb = file_size / (1024 * 1024)
+            logger.info("Uploading file: %s (%.2f MB)", file_path, file_size_mb)
+
+            try:
+                # Upload file to Fal.ai storage
+                # fal_client.upload_file is synchronous, run in thread pool
+                loop = asyncio.get_event_loop()
+                url = await loop.run_in_executor(
+                    None, fal_client.upload_file, file_path
+                )
+
+                # Get filename for display
+                filename = os.path.basename(file_path)
+
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"📤 Uploaded `{filename}` ({file_size_mb:.2f} MB)\n\n**URL:** {url}\n\nThis URL can now be used with other Fal.ai tools.",
+                    )
+                ]
+            except Exception as upload_error:
+                logger.exception("File upload failed: %s", upload_error)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Upload failed: {str(upload_error)}",
                     )
                 ]
 
