@@ -955,6 +955,15 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     timeout=180,  # 3 minute timeout for video generation
                 )
             except asyncio.TimeoutError:
+                logger.error(
+                    "Image-to-video generation timed out after 180s. Model: %s, Image: %s",
+                    model_id,
+                    (
+                        arguments["image_url"][:50] + "..."
+                        if len(arguments["image_url"]) > 50
+                        else arguments["image_url"]
+                    ),
+                )
                 return [
                     TextContent(
                         type="text",
@@ -980,10 +989,22 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 video_url = video_result.get("url")
 
             if video_url:
+                logger.info("Successfully generated video from image: %s", video_url)
                 return [
                     TextContent(
                         type="text",
                         text=f"🎬 Video generated from image with {model_id}: {video_url}",
+                    )
+                ]
+            else:
+                logger.error(
+                    "Image-to-video generation returned no URL. Response: %s",
+                    video_result,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ Video generation completed but no video URL was returned. Please try again.",
                     )
                 ]
 

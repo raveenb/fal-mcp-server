@@ -550,17 +550,42 @@ class FalMCPServer:
                         else str(handle)
                     )
 
-                    # Wait for completion
+                    # Wait for completion with timeout protection
                     response = f"⏳ Image-to-video generation queued (ID: {request_id[:8]}...)\n"
                     response += "Processing (this may take 30-60 seconds)...\n"
 
-                    # Simple wait for result
-                    result = await handle.get()
+                    try:
+                        result = await asyncio.wait_for(handle.get(), timeout=180)
+                    except asyncio.TimeoutError:
+                        logger.error(
+                            "Image-to-video generation timed out after 180s. Model: %s",
+                            model_id,
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Video generation timed out after 180 seconds with {model_id}",
+                            )
+                        ]
 
                     if result:
-                        video_url = result.get("video", {}).get("url") or result.get(
-                            "url"
-                        )
+                        # Check for error in response
+                        if "error" in result:
+                            error_msg = result.get("error", "Unknown error")
+                            return [
+                                TextContent(
+                                    type="text",
+                                    text=f"❌ Image-to-video generation failed: {error_msg}",
+                                )
+                            ]
+
+                        # Extract video URL with isinstance check
+                        video_dict = result.get("video", {})
+                        if isinstance(video_dict, dict):
+                            video_url = video_dict.get("url")
+                        else:
+                            video_url = result.get("url")
+
                         if video_url:
                             logger.info("Successfully generated video: %s", video_url)
                             return [
@@ -569,6 +594,25 @@ class FalMCPServer:
                                     text=f"🎬 Video generated with {model_id}: {video_url}",
                                 )
                             ]
+                        else:
+                            logger.error(
+                                "Image-to-video generation returned no URL. Response: %s",
+                                result,
+                            )
+                            return [
+                                TextContent(
+                                    type="text",
+                                    text="❌ Video generation completed but no video URL was returned. Please try again.",
+                                )
+                            ]
+                    else:
+                        logger.error("Image-to-video generation returned empty result")
+                        return [
+                            TextContent(
+                                type="text",
+                                text="❌ Video generation failed with no response. Please try again.",
+                            )
+                        ]
 
                 return [
                     TextContent(
