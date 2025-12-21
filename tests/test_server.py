@@ -159,6 +159,38 @@ async def test_generate_image_structured_tool_schema():
 
 
 @pytest.mark.asyncio
+async def test_generate_video_tool_schema():
+    """Test that generate_video tool has correct schema with prompt parameter"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    video_tool = next(t for t in tools if t.name == "generate_video")
+
+    assert video_tool is not None
+    props = video_tool.inputSchema["properties"]
+
+    # Check required fields
+    assert "image_url" in props
+    assert props["image_url"]["type"] == "string"
+
+    assert "prompt" in props
+    assert props["prompt"]["type"] == "string"
+
+    # Check optional fields
+    assert "model" in props
+    assert props["model"]["default"] == "fal-ai/wan-i2v"
+
+    assert "duration" in props
+    assert props["duration"]["default"] == 5
+    assert props["duration"]["minimum"] == 2
+    assert props["duration"]["maximum"] == 10
+
+    # Both image_url and prompt are required
+    assert "image_url" in video_tool.inputSchema["required"]
+    assert "prompt" in video_tool.inputSchema["required"]
+
+
+@pytest.mark.asyncio
 async def test_resolve_model_id_full_id():
     """Test that full model IDs pass through unchanged"""
     from fal_mcp_server.model_registry import ModelRegistry

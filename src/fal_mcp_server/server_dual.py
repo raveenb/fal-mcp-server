@@ -129,22 +129,26 @@ class FalMCPServer:
                         "properties": {
                             "image_url": {
                                 "type": "string",
-                                "description": "Starting image URL",
+                                "description": "Starting image URL (for image-to-video)",
+                            },
+                            "prompt": {
+                                "type": "string",
+                                "description": "Text description to guide the video animation (e.g., 'camera slowly pans right, gentle breeze moves the leaves')",
                             },
                             "model": {
                                 "type": "string",
-                                "default": "svd",
-                                "description": "Model ID (e.g., 'fal-ai/kling-video') or alias (e.g., 'svd'). Use list_models to see options.",
+                                "default": "fal-ai/wan-i2v",
+                                "description": "Model ID (e.g., 'fal-ai/kling-video/v2.1/standard/image-to-video'). Use list_models to see options.",
                             },
                             "duration": {
                                 "type": "integer",
-                                "default": 4,
+                                "default": 5,
                                 "minimum": 2,
                                 "maximum": 10,
                                 "description": "Video duration in seconds",
                             },
                         },
-                        "required": ["image_url"],
+                        "required": ["image_url", "prompt"],
                     },
                 ),
                 Tool(

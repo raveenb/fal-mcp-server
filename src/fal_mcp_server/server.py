@@ -305,20 +305,24 @@ async def list_tools() -> List[Tool]:
                         "type": "string",
                         "description": "Starting image URL (for image-to-video)",
                     },
+                    "prompt": {
+                        "type": "string",
+                        "description": "Text description to guide the video animation (e.g., 'camera slowly pans right, gentle breeze moves the leaves')",
+                    },
                     "model": {
                         "type": "string",
-                        "default": "svd",
-                        "description": "Model ID (e.g., 'fal-ai/kling-video') or alias (e.g., 'svd'). Use list_models to see options.",
+                        "default": "fal-ai/wan-i2v",
+                        "description": "Model ID (e.g., 'fal-ai/kling-video/v2.1/standard/image-to-video'). Use list_models to see options.",
                     },
                     "duration": {
                         "type": "integer",
-                        "default": 4,
+                        "default": 5,
                         "minimum": 2,
                         "maximum": 10,
                         "description": "Video duration in seconds",
                     },
                 },
-                "required": ["image_url"],
+                "required": ["image_url", "prompt"],
             },
         ),
         Tool(
@@ -762,7 +766,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
         # Long operations using subscribe_async (handles queue automatically)
         elif name == "generate_video":
-            model_input = arguments.get("model", "svd")
+            model_input = arguments.get("model", "fal-ai/wan-i2v")
             try:
                 model_id = await registry.resolve_model_id(model_input)
             except ValueError as e:
@@ -773,7 +777,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     )
                 ]
 
-            fal_args = {"image_url": arguments["image_url"]}
+            fal_args = {
+                "image_url": arguments["image_url"],
+                "prompt": arguments["prompt"],
+            }
             if "duration" in arguments:
                 fal_args["duration"] = arguments["duration"]
 
