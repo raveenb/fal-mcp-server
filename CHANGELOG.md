@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.10.0 (2025-12-21)
+
+### Bug Fixes
+
+- Address PR review issues - error handling and logging
+  ([#77](https://github.com/raveenb/fal-mcp-server/pull/77),
+  [`72a15fb`](https://github.com/raveenb/fal-mcp-server/commit/72a15fb027f8df38770a1dd554a915132aac236c))
+
+- Rename video_result to i2v_result to avoid mypy redefinition error
+  ([#77](https://github.com/raveenb/fal-mcp-server/pull/77),
+  [`72a15fb`](https://github.com/raveenb/fal-mcp-server/commit/72a15fb027f8df38770a1dd554a915132aac236c))
+
+### Features
+
+- Add generate_video_from_image tool for dedicated image-to-video
+  ([#77](https://github.com/raveenb/fal-mcp-server/pull/77),
+  [`72a15fb`](https://github.com/raveenb/fal-mcp-server/commit/72a15fb027f8df38770a1dd554a915132aac236c))
+
+
 ## v1.9.0 (2025-12-21)
 
 ### Bug Fixes
