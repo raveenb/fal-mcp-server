@@ -296,6 +296,61 @@ async def list_tools() -> List[Tool]:
             },
         ),
         Tool(
+            name="generate_image_from_image",
+            description="Transform an existing image into a new image based on a prompt. Use for style transfer, editing, variations, and more. Use upload_file first if you have a local image.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "image_url": {
+                        "type": "string",
+                        "description": "URL of the source image to transform (use upload_file for local images)",
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "description": "Text description of desired transformation (e.g., 'Transform into a watercolor painting')",
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": "fal-ai/flux/dev/image-to-image",
+                        "description": "Image-to-image model. Options: fal-ai/flux/dev/image-to-image, fal-ai/flux-2/edit",
+                    },
+                    "strength": {
+                        "type": "number",
+                        "default": 0.75,
+                        "minimum": 0.0,
+                        "maximum": 1.0,
+                        "description": "How much to transform (0=keep original, 1=ignore original)",
+                    },
+                    "num_images": {
+                        "type": "integer",
+                        "default": 1,
+                        "minimum": 1,
+                        "maximum": 4,
+                    },
+                    "negative_prompt": {
+                        "type": "string",
+                        "description": "What to avoid in the output image",
+                    },
+                    "seed": {
+                        "type": "integer",
+                        "description": "Seed for reproducible generation",
+                    },
+                    "enable_safety_checker": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Enable safety checker to filter inappropriate content",
+                    },
+                    "output_format": {
+                        "type": "string",
+                        "enum": ["jpeg", "png", "webp"],
+                        "default": "png",
+                        "description": "Output image format",
+                    },
+                },
+                "required": ["image_url", "prompt"],
+            },
+        ),
+        Tool(
             name="generate_video",
             description="Generate videos from text prompts (text-to-video) or from images (image-to-video). Use list_models with category='video' to discover available models.",
             inputSchema={
@@ -832,6 +887,121 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 ]
 
             response = f"🎨 Generated {len(urls)} image(s) with {model_id} (structured prompt):\n\n"
+            for i, url in enumerate(urls, 1):
+                response += f"Image {i}: {url}\n"
+            return [TextContent(type="text", text=response)]
+
+        # Image-to-image transformation
+        elif name == "generate_image_from_image":
+            model_input = arguments.get("model", "fal-ai/flux/dev/image-to-image")
+            try:
+                model_id = await registry.resolve_model_id(model_input)
+            except ValueError as e:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ {e}. Use list_models to see available options.",
+                    )
+                ]
+
+            # Both image_url and prompt are required
+            img2img_args: Dict[str, Any] = {
+                "image_url": arguments["image_url"],
+                "prompt": arguments["prompt"],
+                "strength": arguments.get("strength", 0.75),
+                "num_images": arguments.get("num_images", 1),
+            }
+
+            # Add optional parameters
+            if "negative_prompt" in arguments:
+                img2img_args["negative_prompt"] = arguments["negative_prompt"]
+            if "seed" in arguments:
+                img2img_args["seed"] = arguments["seed"]
+            if "enable_safety_checker" in arguments:
+                img2img_args["enable_safety_checker"] = arguments[
+                    "enable_safety_checker"
+                ]
+            if "output_format" in arguments:
+                img2img_args["output_format"] = arguments["output_format"]
+
+            logger.info(
+                "Starting image-to-image transformation with %s from %s",
+                model_id,
+                (
+                    arguments["image_url"][:50] + "..."
+                    if len(arguments["image_url"]) > 50
+                    else arguments["image_url"]
+                ),
+            )
+
+            # Use async API with timeout protection for fast image transformation
+            try:
+                result = await asyncio.wait_for(
+                    fal_client.run_async(model_id, arguments=img2img_args),
+                    timeout=60,
+                )
+            except asyncio.TimeoutError:
+                logger.error(
+                    "Image-to-image transformation timed out after 60s. Model: %s",
+                    model_id,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image transformation timed out after 60 seconds with {model_id}. Please try again.",
+                    )
+                ]
+            except Exception as e:
+                logger.exception("Image-to-image transformation failed: %s", e)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image transformation failed: {e}",
+                    )
+                ]
+
+            # Check for error in response
+            if "error" in result:
+                error_msg = result.get("error", "Unknown error")
+                logger.error(
+                    "Image-to-image transformation failed for %s: %s",
+                    model_id,
+                    error_msg,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image transformation failed: {error_msg}",
+                    )
+                ]
+
+            images = result.get("images", [])
+            if not images:
+                logger.error(
+                    "Image-to-image transformation returned no images. Response: %s",
+                    result,
+                )
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ Image transformation completed but no images were returned. Please try again.",
+                    )
+                ]
+
+            # Extract URLs safely
+            try:
+                urls = [img["url"] for img in images]
+            except (KeyError, TypeError) as e:
+                logger.error("Malformed image response from %s: %s", model_id, e)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Image transformation completed but response was malformed: {e}",
+                    )
+                ]
+
+            logger.info("Successfully transformed image with %s: %s", model_id, urls[0])
+            response = f"🎨 Transformed image with {model_id} (strength={img2img_args['strength']}):\n\n"
             for i, url in enumerate(urls, 1):
                 response += f"Image {i}: {url}\n"
             return [TextContent(type="text", text=response)]
