@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.8.1 (2025-12-21)
+
+### Bug Fixes
+
+- Add optional video parameters and fix server_dual.py handler
+  ([#59](https://github.com/raveenb/fal-mcp-server/pull/59),
+  [`fef5fef`](https://github.com/raveenb/fal-mcp-server/commit/fef5fefe15d426a195e5d20af81775fc78353c6b))
+
+- Add prompt parameter to generate_video and update default model
+  ([#59](https://github.com/raveenb/fal-mcp-server/pull/59),
+  [`fef5fef`](https://github.com/raveenb/fal-mcp-server/commit/fef5fefe15d426a195e5d20af81775fc78353c6b))
+
+
 ## v1.8.0 (2025-12-21)
 
 ### Bug Fixes
