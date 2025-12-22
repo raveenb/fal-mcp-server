@@ -291,8 +291,33 @@ async def handle_generate_video_from_video(
                 text=f"❌ Video transformation timed out after 300 seconds with {model_id}. Video processing can take several minutes for longer videos.",
             )
         ]
+    except Exception as e:
+        logger.exception(
+            "Video-to-video transformation failed. Model: %s, Video: %s",
+            model_id,
+            (
+                arguments["video_url"][:50] + "..."
+                if len(arguments["video_url"]) > 50
+                else arguments["video_url"]
+            ),
+        )
+        return [
+            TextContent(
+                type="text",
+                text=f"❌ Video transformation failed: {e}",
+            )
+        ]
 
     if video_result is None:
+        logger.error(
+            "Video-to-video transformation returned None. Model: %s, Video: %s",
+            model_id,
+            (
+                arguments["video_url"][:50] + "..."
+                if len(arguments["video_url"]) > 50
+                else arguments["video_url"]
+            ),
+        )
         return [
             TextContent(
                 type="text",
@@ -335,6 +360,16 @@ async def handle_generate_video_from_video(
             )
         ]
 
+    logger.warning(
+        "Video transformation completed but no video URL in response. Model: %s, Video: %s, Response keys: %s",
+        model_id,
+        (
+            arguments["video_url"][:50] + "..."
+            if len(arguments["video_url"]) > 50
+            else arguments["video_url"]
+        ),
+        list(video_result.keys()) if video_result else "None",
+    )
     return [
         TextContent(
             type="text",
