@@ -136,19 +136,24 @@ async def handle_recommend_model(
     lines.append("💡 *Models are ranked by relevance. ⭐ = Featured by Fal.ai*\n")
 
     for i, rec in enumerate(recommendations, 1):
-        model = rec.model
-        score = rec.score
+        # rec is a dictionary from model_registry.recommend_models
+        model_id = rec.get("model_id", "unknown")
+        name = rec.get("name")
+        description = rec.get("description")
+        highlighted = rec.get("highlighted", False)
+        group = rec.get("group")
+        score = rec.get("score", 0.0)
 
         # Badge for highlighted models
-        highlighted_badge = " ⭐" if model.highlighted else ""
+        highlighted_badge = " ⭐" if highlighted else ""
 
-        lines.append(f"### {i}. `{model.id}`{highlighted_badge}")
-        if model.name:
-            lines.append(f"**{model.name}**")
-        if model.description:
-            lines.append(f"{model.description}")
-        if model.group_label:
-            lines.append(f"*Family: {model.group_label}*")
+        lines.append(f"### {i}. `{model_id}`{highlighted_badge}")
+        if name:
+            lines.append(f"**{name}**")
+        if description:
+            lines.append(f"{description}")
+        if group:
+            lines.append(f"*Family: {group}*")
         lines.append(f"*Relevance: {score:.1%}*\n")
 
     return [TextContent(type="text", text="\n".join(lines))]

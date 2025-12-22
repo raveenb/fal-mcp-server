@@ -61,13 +61,13 @@ class PollingStrategy(QueueStrategy):
                 return None  # Timeout
 
             # Get current status
-            status = await handle.status_async()
+            status = await handle.status_async()  # type: ignore[attr-defined]
 
             # Check if complete
             status_str = str(status).lower()
             if "completed" in status_str or "done" in status_str:
                 # Get final result
-                result = await handle.get_async()
+                result = await handle.get_async()  # type: ignore[attr-defined]
                 return dict(result) if result else None
 
             if "failed" in status_str or "error" in status_str:
