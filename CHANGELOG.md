@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.14.0 (2025-12-22)
+
+### Bug Fixes
+
+- Improve error handling in video-to-video handler
+  ([#90](https://github.com/raveenb/fal-mcp-server/pull/90),
+  [`8cfc5d4`](https://github.com/raveenb/fal-mcp-server/commit/8cfc5d44cc0b29692eecb4a5df46d3afc89414e8))
+
+### Features
+
+- Add video-to-video transformation tool ([#90](https://github.com/raveenb/fal-mcp-server/pull/90),
+  [`8cfc5d4`](https://github.com/raveenb/fal-mcp-server/commit/8cfc5d44cc0b29692eecb4a5df46d3afc89414e8))
+
+
 ## v1.13.1 (2025-12-22)
 
 ### Refactoring
