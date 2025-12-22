@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.13.0 (2025-12-22)
+
+### Bug Fixes
+
+- Format test_model_registry.py with black
+  ([#85](https://github.com/raveenb/fal-mcp-server/pull/85),
+  [`cdcf8bb`](https://github.com/raveenb/fal-mcp-server/commit/cdcf8bb37119b150b464977a64d2dd11f6de72f3))
+
+- Resolve mypy type errors in queue and handlers
+  ([#85](https://github.com/raveenb/fal-mcp-server/pull/85),
+  [`cdcf8bb`](https://github.com/raveenb/fal-mcp-server/commit/cdcf8bb37119b150b464977a64d2dd11f6de72f3))
+
+### Features
+
+- Fix musicgen alias and extract shared modules
+  ([#85](https://github.com/raveenb/fal-mcp-server/pull/85),
+  [`cdcf8bb`](https://github.com/raveenb/fal-mcp-server/commit/cdcf8bb37119b150b464977a64d2dd11f6de72f3))
+
+
 ## v1.12.1 (2025-12-22)
 
 ### Bug Fixes
