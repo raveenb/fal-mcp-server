@@ -52,8 +52,9 @@ class TestModelRegistry:
             "svd",
             "animatediff",
             "kling",
-            "musicgen",
-            "musicgen_large",
+            "musicgen",  # Now maps to fal-ai/lyria2 (musicgen-medium no longer exists)
+            "lyria2",
+            "stable_audio",
             "bark",
             "whisper",
         ]
@@ -91,7 +92,7 @@ class TestModelRegistry:
         assert result == "fal-ai/fast-sdxl"
 
         result = await registry.resolve_model_id("musicgen")
-        assert result == "fal-ai/musicgen-medium"
+        assert result == "fal-ai/lyria2"  # Updated: musicgen-medium no longer exists
 
     @pytest.mark.asyncio
     async def test_resolve_model_id_unknown_alias(self, registry):
@@ -143,7 +144,7 @@ class TestModelRegistry:
             model_ids = [m.id for m in all_models]
             assert "fal-ai/flux/schnell" in model_ids
             assert "fal-ai/kling-video" in model_ids
-            assert "fal-ai/musicgen-medium" in model_ids
+            assert "fal-ai/lyria2" in model_ids  # Updated: musicgen-medium no longer exists
 
     def test_cache_ttl_expiration(self, registry):
         """Test that cache expires after TTL."""
