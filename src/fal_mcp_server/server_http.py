@@ -748,6 +748,14 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         text="❌ Cannot connect to Fal.ai API. Check your network connection.",
                     )
                 ]
+            except httpx.RequestError as e:
+                logger.error("Network error connecting to pricing API: %s", e)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Network error: {type(e).__name__}. Please check your connection and try again.",
+                    )
+                ]
 
             prices = pricing_data.get("prices", [])
             if not prices:
@@ -769,10 +777,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 # Format price with currency symbol
                 if currency == "USD":
                     price_str = f"${unit_price:.4f}".rstrip("0").rstrip(".")
+                    # Preserve precision for very small prices
+                    if unit_price < 0.01 and unit_price > 0:
+                        price_str = f"${unit_price:.4f}"
                 else:
-                    price_str = f"{unit_price:.4f} {currency}".rstrip("0").rstrip(".")
+                    price_str = f"{unit_price} {currency}"
 
-                lines.append(f"- **`{endpoint_id}`**: {price_str} per {unit}")
+                lines.append(f"- **{endpoint_id}**: {price_str}/{unit}")
 
             lines.append(
                 "\n💡 *Prices are estimates. Check fal.ai/pricing for current rates.*"
@@ -859,6 +870,14 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         text="❌ Cannot connect to Fal.ai API. Check your network connection.",
                     )
                 ]
+            except httpx.RequestError as e:
+                logger.error("Network error connecting to usage API: %s", e)
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"❌ Network error: {type(e).__name__}. Please check your connection and try again.",
+                    )
+                ]
 
             # Extract summary data
             summary = usage_data.get("summary", [])
@@ -882,8 +901,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             else:
                 total_str = f"{total_cost:.2f} {currency}"
 
-            lines.append(f"**Total Spend**: {total_str}\n")
-            lines.append("**Breakdown by Model**:")
+            lines.append(f"**Total**: {total_str}\n")
+            lines.append("**By Model**:")
 
             # Sort by cost descending
             sorted_summary = sorted(summary, key=lambda x: x.get("cost", 0), reverse=True)
@@ -891,6 +910,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             for item in sorted_summary:
                 endpoint_id = item.get("endpoint_id", "Unknown")
                 quantity = item.get("quantity", 0)
+                unit = item.get("unit", "request")
                 cost = item.get("cost", 0)
 
                 if currency == "USD":
@@ -898,7 +918,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 else:
                     cost_str = f"{cost:.2f} {currency}"
 
-                lines.append(f"- `{endpoint_id}`: {quantity} requests → {cost_str}")
+                lines.append(f"- {endpoint_id}: {quantity} {unit}s = {cost_str}")
 
             return [TextContent(type="text", text="\n".join(lines))]
 
