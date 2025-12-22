@@ -224,7 +224,11 @@ class FalMCPServer:
                                         },
                                         "position": {
                                             "type": "string",
-                                            "enum": ["foreground", "midground", "background"],
+                                            "enum": [
+                                                "foreground",
+                                                "midground",
+                                                "background",
+                                            ],
                                             "description": "Position in the composition",
                                         },
                                     },
@@ -910,7 +914,9 @@ class FalMCPServer:
                         else:
                             cost_str = f"{cost:.2f} {currency}"
 
-                        lines.append(f"- {endpoint_id}: {quantity} {unit}s = {cost_str}")
+                        lines.append(
+                            f"- {endpoint_id}: {quantity} {unit}s = {cost_str}"
+                        )
 
                     return [TextContent(type="text", text="\n".join(lines))]
 
@@ -1013,7 +1019,9 @@ class FalMCPServer:
                         fal_args["output_format"] = arguments["output_format"]
 
                     # Use native async API for fast image generation with timeout
-                    logger.info("Starting structured image generation with %s", model_id)
+                    logger.info(
+                        "Starting structured image generation with %s", model_id
+                    )
                     try:
                         result = await asyncio.wait_for(
                             fal_client.run_async(model_id, arguments=fal_args),
@@ -1062,7 +1070,9 @@ class FalMCPServer:
                     try:
                         urls = [img["url"] for img in images]
                     except (KeyError, TypeError) as e:
-                        logger.error("Malformed image response from %s: %s", model_id, e)
+                        logger.error(
+                            "Malformed image response from %s: %s", model_id, e
+                        )
                         return [
                             TextContent(
                                 type="text",

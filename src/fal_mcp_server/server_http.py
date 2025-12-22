@@ -905,7 +905,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             lines.append("**By Model**:")
 
             # Sort by cost descending
-            sorted_summary = sorted(summary, key=lambda x: x.get("cost", 0), reverse=True)
+            sorted_summary = sorted(
+                summary, key=lambda x: x.get("cost", 0), reverse=True
+            )
 
             for item in sorted_summary:
                 endpoint_id = item.get("endpoint_id", "Unknown")
