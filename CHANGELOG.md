@@ -2,6 +2,26 @@
 
 <!-- version list -->
 
+## v1.12.1 (2025-12-22)
+
+### Bug Fixes
+
+- Add missing tools to HTTP/SSE transport servers
+  ([#81](https://github.com/raveenb/fal-mcp-server/pull/81),
+  [`ba37709`](https://github.com/raveenb/fal-mcp-server/commit/ba3770951d5da61527ed132a912aa80da441463f))
+
+- Address code review feedback for PR #81 ([#81](https://github.com/raveenb/fal-mcp-server/pull/81),
+  [`ba37709`](https://github.com/raveenb/fal-mcp-server/commit/ba3770951d5da61527ed132a912aa80da441463f))
+
+### Code Style
+
+- Apply Black formatting ([#81](https://github.com/raveenb/fal-mcp-server/pull/81),
+  [`ba37709`](https://github.com/raveenb/fal-mcp-server/commit/ba3770951d5da61527ed132a912aa80da441463f))
+
+- Fix import sorting (ruff I001) ([#81](https://github.com/raveenb/fal-mcp-server/pull/81),
+  [`ba37709`](https://github.com/raveenb/fal-mcp-server/commit/ba3770951d5da61527ed132a912aa80da441463f))
+
+
 ## v1.12.0 (2025-12-22)
 
 ### Bug Fixes
