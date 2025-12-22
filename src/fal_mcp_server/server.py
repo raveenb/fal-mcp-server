@@ -609,10 +609,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             category = arguments.get("category")
             limit = arguments.get("limit", 5)
 
-            result = await registry.recommend_models(
+            recommend_result = await registry.recommend_models(
                 task=task, category=category, limit=limit
             )
-            recommendations = result.recommendations
+            recommendations = recommend_result.recommendations
 
             if not recommendations:
                 return [
@@ -626,9 +626,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             lines = [f'## 🎯 Recommended Models for: "{task}"\n']
 
             # Add fallback warning if API search failed
-            if result.used_fallback:
+            if recommend_result.used_fallback:
                 lines.append(
-                    f"⚠️ *Using cached results ({result.fallback_reason}). Results may be less relevant.*\n"
+                    f"⚠️ *Using cached results ({recommend_result.fallback_reason}). Results may be less relevant.*\n"
                 )
 
             for i, rec in enumerate(recommendations, 1):
