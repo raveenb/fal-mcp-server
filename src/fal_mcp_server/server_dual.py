@@ -3,12 +3,15 @@
 
 import argparse
 import asyncio
+import json
 import os
 import sys
 import threading
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 import fal_client
+import httpx
 import mcp.server.stdio
 import uvicorn
 from loguru import logger
@@ -108,6 +111,46 @@ class FalMCPServer:
                     },
                 ),
                 Tool(
+                    name="get_pricing",
+                    description="Get pricing information for Fal.ai models. Returns cost per unit (image/video/second) in USD. Use this to check costs before generating content.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "models": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Model IDs or aliases to get pricing for (e.g., ['flux_schnell', 'fal-ai/kling-video'])",
+                                "minItems": 1,
+                                "maxItems": 50,
+                            },
+                        },
+                        "required": ["models"],
+                    },
+                ),
+                Tool(
+                    name="get_usage",
+                    description="Get usage and spending history for your Fal.ai workspace. Shows quantity, cost, and breakdown by model. Requires admin API key.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "start": {
+                                "type": "string",
+                                "description": "Start date (YYYY-MM-DD format). Defaults to 7 days ago.",
+                            },
+                            "end": {
+                                "type": "string",
+                                "description": "End date (YYYY-MM-DD format). Defaults to today.",
+                            },
+                            "models": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Filter by specific model IDs/aliases (optional)",
+                            },
+                        },
+                        "required": [],
+                    },
+                ),
+                Tool(
                     name="generate_image",
                     description="Generate images from text prompts. Use list_models with category='image' to discover available models.",
                     inputSchema={
@@ -149,6 +192,151 @@ class FalMCPServer:
                             },
                         },
                         "required": ["prompt"],
+                    },
+                ),
+                Tool(
+                    name="generate_image_structured",
+                    description="Generate images with detailed structured prompts for precise control over composition, style, lighting, and subjects. Ideal for AI agents that need fine-grained control.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "scene": {
+                                "type": "string",
+                                "description": "Overall scene description - the main subject and setting",
+                            },
+                            "subjects": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "Type of subject (e.g., 'person', 'building', 'animal')",
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Detailed description of the subject",
+                                        },
+                                        "pose": {
+                                            "type": "string",
+                                            "description": "Pose or action of the subject",
+                                        },
+                                        "position": {
+                                            "type": "string",
+                                            "enum": [
+                                                "foreground",
+                                                "midground",
+                                                "background",
+                                            ],
+                                            "description": "Position in the composition",
+                                        },
+                                    },
+                                },
+                                "description": "List of subjects with their positions and descriptions",
+                            },
+                            "style": {
+                                "type": "string",
+                                "description": "Art style (e.g., 'Digital art painting', 'Photorealistic', 'Watercolor', 'Oil painting')",
+                            },
+                            "color_palette": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Hex color codes for the palette (e.g., ['#000033', '#6A0DAD', '#FFFFFF'])",
+                            },
+                            "lighting": {
+                                "type": "string",
+                                "description": "Lighting description (e.g., 'Soft golden hour lighting', 'Dramatic chiaroscuro')",
+                            },
+                            "mood": {
+                                "type": "string",
+                                "description": "Emotional mood of the image (e.g., 'Serene', 'Dramatic', 'Mysterious')",
+                            },
+                            "background": {
+                                "type": "string",
+                                "description": "Background description",
+                            },
+                            "composition": {
+                                "type": "string",
+                                "description": "Compositional rules (e.g., 'Rule of thirds', 'Centered', 'Golden ratio')",
+                            },
+                            "camera": {
+                                "type": "object",
+                                "properties": {
+                                    "angle": {
+                                        "type": "string",
+                                        "description": "Camera angle (e.g., 'Low angle', 'Eye level', 'Bird's eye')",
+                                    },
+                                    "distance": {
+                                        "type": "string",
+                                        "description": "Shot distance (e.g., 'Close-up', 'Medium shot', 'Wide shot')",
+                                    },
+                                    "focus": {
+                                        "type": "string",
+                                        "description": "Focus description (e.g., 'Sharp focus on subject, blurred background')",
+                                    },
+                                    "lens": {
+                                        "type": "string",
+                                        "description": "Lens type (e.g., 'Wide-angle', '50mm portrait', 'Telephoto')",
+                                    },
+                                    "f_number": {
+                                        "type": "string",
+                                        "description": "Aperture (e.g., 'f/1.8', 'f/5.6', 'f/11')",
+                                    },
+                                    "iso": {
+                                        "type": "integer",
+                                        "description": "ISO setting (e.g., 100, 400, 800)",
+                                    },
+                                },
+                                "description": "Camera settings for photographic style control",
+                            },
+                            "effects": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Visual effects (e.g., ['Bokeh', 'Light rays', 'Lens flare', 'Motion blur'])",
+                            },
+                            "negative_prompt": {
+                                "type": "string",
+                                "description": "What to avoid in the image (e.g., 'blurry, low quality, distorted')",
+                            },
+                            "model": {
+                                "type": "string",
+                                "default": "flux_schnell",
+                                "description": "Model ID or alias. Use list_models to see options.",
+                            },
+                            "image_size": {
+                                "type": "string",
+                                "enum": [
+                                    "square",
+                                    "landscape_4_3",
+                                    "landscape_16_9",
+                                    "portrait_3_4",
+                                    "portrait_9_16",
+                                ],
+                                "default": "landscape_16_9",
+                            },
+                            "num_images": {
+                                "type": "integer",
+                                "default": 1,
+                                "minimum": 1,
+                                "maximum": 4,
+                            },
+                            "seed": {
+                                "type": "integer",
+                                "description": "Seed for reproducible generation",
+                            },
+                            "enable_safety_checker": {
+                                "type": "boolean",
+                                "default": True,
+                                "description": "Enable safety checker to filter inappropriate content",
+                            },
+                            "output_format": {
+                                "type": "string",
+                                "enum": ["jpeg", "png", "webp"],
+                                "default": "png",
+                                "description": "Output image format",
+                            },
+                        },
+                        "required": ["scene"],
                     },
                 ),
                 Tool(
@@ -486,6 +674,251 @@ class FalMCPServer:
 
                     return [TextContent(type="text", text="\n".join(lines))]
 
+                # Get pricing for models
+                elif name == "get_pricing":
+                    model_inputs = arguments.get("models", [])
+                    if not model_inputs:
+                        return [
+                            TextContent(
+                                type="text",
+                                text="❌ No models specified. Provide a list of model IDs or aliases.",
+                            )
+                        ]
+
+                    # Resolve all model inputs to endpoint IDs
+                    endpoint_ids = []
+                    failed_models = []
+                    for model_input in model_inputs:
+                        try:
+                            endpoint_id = await registry.resolve_model_id(model_input)
+                            endpoint_ids.append(endpoint_id)
+                        except ValueError:
+                            failed_models.append(model_input)
+
+                    if failed_models:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Unknown model(s): {', '.join(failed_models)}. Use list_models to see available options.",
+                            )
+                        ]
+
+                    # Fetch pricing from API
+                    try:
+                        pricing_data = await registry.get_pricing(endpoint_ids)
+                    except httpx.HTTPStatusError as e:
+                        logger.error(
+                            "Pricing API returned HTTP %d for %s: %s",
+                            e.response.status_code,
+                            endpoint_ids,
+                            e,
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Pricing API error (HTTP {e.response.status_code})",
+                            )
+                        ]
+                    except httpx.TimeoutException:
+                        logger.error("Pricing API timeout for %s", endpoint_ids)
+                        return [
+                            TextContent(
+                                type="text",
+                                text="❌ Pricing request timed out. Please try again.",
+                            )
+                        ]
+                    except httpx.ConnectError as e:
+                        logger.error("Cannot connect to pricing API: %s", e)
+                        return [
+                            TextContent(
+                                type="text",
+                                text="❌ Cannot connect to Fal.ai API. Check your network connection.",
+                            )
+                        ]
+                    except httpx.RequestError as e:
+                        logger.error("Network error connecting to pricing API: %s", e)
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Network error: {type(e).__name__}. Please check your connection and try again.",
+                            )
+                        ]
+
+                    prices = pricing_data.get("prices", [])
+                    if not prices:
+                        return [
+                            TextContent(
+                                type="text",
+                                text="No pricing information available for the specified models.",
+                            )
+                        ]
+
+                    # Format output
+                    lines = ["💰 **Pricing Information**\n"]
+                    for price_info in prices:
+                        endpoint_id = price_info.get("endpoint_id", "Unknown")
+                        unit_price = price_info.get("unit_price", 0)
+                        unit = price_info.get("unit", "request")
+                        currency = price_info.get("currency", "USD")
+
+                        # Format price with currency symbol
+                        if currency == "USD":
+                            price_str = f"${unit_price:.4f}".rstrip("0").rstrip(".")
+                            # Preserve precision for very small prices
+                            if unit_price < 0.01 and unit_price > 0:
+                                price_str = f"${unit_price:.4f}"
+                        else:
+                            price_str = f"{unit_price} {currency}"
+
+                        lines.append(f"- **{endpoint_id}**: {price_str}/{unit}")
+
+                    lines.append(
+                        "\n💡 *Prices are estimates. Check fal.ai/pricing for current rates.*"
+                    )
+                    return [TextContent(type="text", text="\n".join(lines))]
+
+                # Get usage/spending history
+                elif name == "get_usage":
+                    # Get date parameters (default to last 7 days)
+                    end_date = arguments.get("end")
+                    start_date = arguments.get("start")
+
+                    if not end_date:
+                        end_date = datetime.now().strftime("%Y-%m-%d")
+                    if not start_date:
+                        start_date = (datetime.now() - timedelta(days=7)).strftime(
+                            "%Y-%m-%d"
+                        )
+
+                    # Resolve model filters if provided
+                    endpoint_ids = None
+                    model_inputs = arguments.get("models", [])
+                    if model_inputs:
+                        endpoint_ids = []
+                        failed_models = []
+                        for model_input in model_inputs:
+                            try:
+                                endpoint_id = await registry.resolve_model_id(
+                                    model_input
+                                )
+                                endpoint_ids.append(endpoint_id)
+                            except ValueError:
+                                failed_models.append(model_input)
+
+                        if failed_models:
+                            return [
+                                TextContent(
+                                    type="text",
+                                    text=f"❌ Unknown model(s): {', '.join(failed_models)}. Use list_models to see available options.",
+                                )
+                            ]
+
+                    # Fetch usage from API
+                    try:
+                        usage_data = await registry.get_usage(
+                            start=start_date,
+                            end=end_date,
+                            endpoint_ids=endpoint_ids,
+                        )
+                    except httpx.HTTPStatusError as e:
+                        if e.response.status_code == 401:
+                            logger.error(
+                                "Usage API returned 401 - admin key may be required"
+                            )
+                            return [
+                                TextContent(
+                                    type="text",
+                                    text=(
+                                        "❌ Unauthorized. This could mean:\n"
+                                        "- Your FAL_KEY may be expired or invalid\n"
+                                        "- The get_usage tool requires an admin API key with billing permissions\n"
+                                        "Please verify your API key configuration."
+                                    ),
+                                )
+                            ]
+                        logger.error(
+                            "Usage API returned HTTP %d: %s",
+                            e.response.status_code,
+                            e,
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Usage API error (HTTP {e.response.status_code})",
+                            )
+                        ]
+                    except httpx.TimeoutException:
+                        logger.error("Usage API timeout")
+                        return [
+                            TextContent(
+                                type="text",
+                                text="❌ Usage request timed out. Please try again.",
+                            )
+                        ]
+                    except httpx.ConnectError as e:
+                        logger.error("Cannot connect to usage API: %s", e)
+                        return [
+                            TextContent(
+                                type="text",
+                                text="❌ Cannot connect to Fal.ai API. Check your network connection.",
+                            )
+                        ]
+                    except httpx.RequestError as e:
+                        logger.error("Network error connecting to usage API: %s", e)
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Network error: {type(e).__name__}. Please check your connection and try again.",
+                            )
+                        ]
+
+                    # Extract summary data
+                    summary = usage_data.get("summary", [])
+                    if not summary:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"📊 No usage data found for {start_date} to {end_date}.",
+                            )
+                        ]
+
+                    # Calculate totals and format output
+                    total_cost = sum(item.get("cost", 0) for item in summary)
+                    currency = summary[0].get("currency", "USD") if summary else "USD"
+
+                    lines = [f"📊 **Usage Summary** ({start_date} to {end_date})\n"]
+
+                    # Format total
+                    if currency == "USD":
+                        total_str = f"${total_cost:.2f}"
+                    else:
+                        total_str = f"{total_cost:.2f} {currency}"
+
+                    lines.append(f"**Total**: {total_str}\n")
+                    lines.append("**By Model**:")
+
+                    # Sort by cost descending
+                    sorted_summary = sorted(
+                        summary, key=lambda x: x.get("cost", 0), reverse=True
+                    )
+
+                    for item in sorted_summary:
+                        endpoint_id = item.get("endpoint_id", "Unknown")
+                        quantity = item.get("quantity", 0)
+                        unit = item.get("unit", "request")
+                        cost = item.get("cost", 0)
+
+                        if currency == "USD":
+                            cost_str = f"${cost:.2f}"
+                        else:
+                            cost_str = f"{cost:.2f} {currency}"
+
+                        lines.append(
+                            f"- {endpoint_id}: {quantity} {unit}s = {cost_str}"
+                        )
+
+                    return [TextContent(type="text", text="\n".join(lines))]
+
                 # Fast operations using async API
                 if name == "generate_image":
                     model_input = arguments.get("model", "flux_schnell")
@@ -523,6 +956,133 @@ class FalMCPServer:
                         for i, url in enumerate(urls, 1):
                             response += f"Image {i}: {url}\n"
                         return [TextContent(type="text", text=response)]
+
+                # Structured image generation (fast operation)
+                elif name == "generate_image_structured":
+                    model_input = arguments.get("model", "flux_schnell")
+                    try:
+                        model_id = await registry.resolve_model_id(model_input)
+                    except ValueError as e:
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ {e}. Use list_models to see available options.",
+                            )
+                        ]
+
+                    # Build structured JSON prompt from arguments
+                    structured_prompt: Dict[str, Any] = {}
+
+                    # Required field
+                    structured_prompt["scene"] = arguments["scene"]
+
+                    # Optional structured fields
+                    if "subjects" in arguments:
+                        structured_prompt["subjects"] = arguments["subjects"]
+                    if "style" in arguments:
+                        structured_prompt["style"] = arguments["style"]
+                    if "color_palette" in arguments:
+                        structured_prompt["color_palette"] = arguments["color_palette"]
+                    if "lighting" in arguments:
+                        structured_prompt["lighting"] = arguments["lighting"]
+                    if "mood" in arguments:
+                        structured_prompt["mood"] = arguments["mood"]
+                    if "background" in arguments:
+                        structured_prompt["background"] = arguments["background"]
+                    if "composition" in arguments:
+                        structured_prompt["composition"] = arguments["composition"]
+                    if "camera" in arguments:
+                        structured_prompt["camera"] = arguments["camera"]
+                    if "effects" in arguments:
+                        structured_prompt["effects"] = arguments["effects"]
+
+                    # Convert structured prompt to JSON string
+                    json_prompt = json.dumps(structured_prompt, indent=2)
+
+                    fal_args = {
+                        "prompt": json_prompt,
+                        "image_size": arguments.get("image_size", "landscape_16_9"),
+                        "num_images": arguments.get("num_images", 1),
+                    }
+
+                    # Add optional generation parameters
+                    if "negative_prompt" in arguments:
+                        fal_args["negative_prompt"] = arguments["negative_prompt"]
+                    if "seed" in arguments:
+                        fal_args["seed"] = arguments["seed"]
+                    if "enable_safety_checker" in arguments:
+                        fal_args["enable_safety_checker"] = arguments[
+                            "enable_safety_checker"
+                        ]
+                    if "output_format" in arguments:
+                        fal_args["output_format"] = arguments["output_format"]
+
+                    # Use native async API for fast image generation with timeout
+                    logger.info(
+                        "Starting structured image generation with %s", model_id
+                    )
+                    try:
+                        result = await asyncio.wait_for(
+                            fal_client.run_async(model_id, arguments=fal_args),
+                            timeout=60,
+                        )
+                    except asyncio.TimeoutError:
+                        logger.error(
+                            "Structured image generation timed out for %s", model_id
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Image generation timed out after 60 seconds with {model_id}. Please try again.",
+                            )
+                        ]
+
+                    # Check for error in response
+                    if "error" in result:
+                        error_msg = result.get("error", "Unknown error")
+                        logger.error(
+                            "Structured image generation failed for %s: %s",
+                            model_id,
+                            error_msg,
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Image generation failed: {error_msg}",
+                            )
+                        ]
+
+                    images = result.get("images", [])
+                    if not images:
+                        logger.warning(
+                            "Structured image generation returned no images. Model: %s",
+                            model_id,
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ No images were generated by {model_id}. The prompt may have been filtered or the request format was invalid.",
+                            )
+                        ]
+
+                    # Extract URLs safely
+                    try:
+                        urls = [img["url"] for img in images]
+                    except (KeyError, TypeError) as e:
+                        logger.error(
+                            "Malformed image response from %s: %s", model_id, e
+                        )
+                        return [
+                            TextContent(
+                                type="text",
+                                text=f"❌ Image generation completed but response was malformed: {e}",
+                            )
+                        ]
+
+                    response = f"🎨 Generated {len(urls)} image(s) with {model_id} (structured prompt):\n\n"
+                    for i, url in enumerate(urls, 1):
+                        response += f"Image {i}: {url}\n"
+                    return [TextContent(type="text", text=response)]
 
                 # Image-to-image transformation (fast operation)
                 elif name == "generate_image_from_image":
