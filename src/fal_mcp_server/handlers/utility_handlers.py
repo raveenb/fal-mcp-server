@@ -265,13 +265,22 @@ async def handle_get_usage(
     # Resolve endpoint filters if provided
     model_inputs = arguments.get("models", [])
     endpoint_ids = []
+    failed_models = []
     if model_inputs:
         for model_input in model_inputs:
             try:
                 endpoint_id = await registry.resolve_model_id(model_input)
                 endpoint_ids.append(endpoint_id)
             except ValueError:
-                pass  # Skip unknown models
+                failed_models.append(model_input)
+
+        if failed_models:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"❌ Unknown model(s): {', '.join(failed_models)}. Use list_models to see available options.",
+                )
+            ]
 
     # Fetch usage data
     try:
