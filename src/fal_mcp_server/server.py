@@ -35,7 +35,7 @@ async def list_tools() -> List[Tool]:
     return [
         Tool(
             name="list_models",
-            description="Discover available Fal.ai models for image, video, and audio generation. Use this to find model IDs for generate_* tools.",
+            description="Discover available Fal.ai models for image, video, and audio generation. Use 'task' parameter for intelligent task-based ranking (e.g., 'portrait photography'), or 'search' for simple name/description filtering.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -44,9 +44,13 @@ async def list_tools() -> List[Tool]:
                         "enum": ["image", "video", "audio"],
                         "description": "Filter by category (image, video, or audio)",
                     },
+                    "task": {
+                        "type": "string",
+                        "description": "Task description for intelligent ranking (e.g., 'anime illustration', 'product photography'). Uses Fal.ai's semantic search and prioritizes featured models.",
+                    },
                     "search": {
                         "type": "string",
-                        "description": "Search query to filter models by name or description (e.g., 'flux', 'stable diffusion')",
+                        "description": "Simple search query to filter models by name or description (e.g., 'flux'). Use 'task' for better semantic matching.",
                     },
                     "limit": {
                         "type": "integer",
@@ -57,6 +61,32 @@ async def list_tools() -> List[Tool]:
                     },
                 },
                 "required": [],
+            },
+        ),
+        Tool(
+            name="recommend_model",
+            description="Get AI-powered model recommendations for a specific task. Describe what you want to do (e.g., 'generate portrait photo', 'anime style illustration', 'product photography') and get the best-suited models ranked by relevance. Featured models by Fal.ai are prioritized.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "Description of your task (e.g., 'generate professional headshot', 'create anime character', 'transform photo to watercolor')",
+                    },
+                    "category": {
+                        "type": "string",
+                        "enum": ["image", "video", "audio"],
+                        "description": "Optional category hint to narrow search",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "default": 5,
+                        "minimum": 1,
+                        "maximum": 10,
+                        "description": "Maximum number of recommendations",
+                    },
+                },
+                "required": ["task"],
             },
         ),
         Tool(
@@ -491,25 +521,66 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
         # List models tool
         if name == "list_models":
-            models = await registry.list_models(
-                category=arguments.get("category"),
-                search=arguments.get("search"),
-                limit=arguments.get("limit", 20),
-            )
+            task = arguments.get("task")
+            category = arguments.get("category")
+            search = arguments.get("search")
+            limit = arguments.get("limit", 20)
+
+            used_fallback = False
+            fallback_warning = ""
+
+            # If task is provided, use semantic search with API
+            if task:
+                # Map simplified category to API category for search
+                api_category = None
+                if category:
+                    category_map = {
+                        "image": "text-to-image",
+                        "video": "text-to-video",
+                        "audio": "text-to-audio",
+                    }
+                    api_category = category_map.get(category)
+
+                search_result = await registry.search_models(
+                    query=task, category=api_category, limit=limit
+                )
+                models = search_result.models
+                used_fallback = search_result.used_fallback
+
+                if used_fallback:
+                    title = f'## Models for: "{task}" ({len(models)} found)\n'
+                    fallback_warning = f"⚠️ *Using cached results ({search_result.fallback_reason}). Results may be less relevant.*\n"
+                    subtitle = "💡 *⭐ = Featured by Fal.ai*\n"
+                else:
+                    title = f'## Models for: "{task}" ({len(models)} found)\n'
+                    subtitle = "💡 *Sorted by relevance. ⭐ = Featured by Fal.ai*\n"
+            else:
+                # Standard list with optional search filter
+                models = await registry.list_models(
+                    category=category, search=search, limit=limit
+                )
+                title = f"## Available Models ({len(models)} found)\n"
+                subtitle = ""
 
             if not models:
                 return [
                     TextContent(
                         type="text",
-                        text="No models found. Try a different category or search term.",
+                        text="No models found. Try a different category, task, or search term.",
                     )
                 ]
 
             # Format output
-            lines = [f"## Available Models ({len(models)} found)\n"]
+            lines = [title]
+            if fallback_warning:
+                lines.append(fallback_warning)
+            if subtitle:
+                lines.append(subtitle)
 
             for model in models:
-                lines.append(f"- `{model.id}`")
+                # Add star badge for highlighted models
+                highlighted_badge = " ⭐" if model.highlighted else ""
+                lines.append(f"- `{model.id}`{highlighted_badge}")
                 if model.name and model.name != model.id:
                     lines.append(f"  - **{model.name}**")
                 if model.description:
@@ -519,6 +590,68 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                         else model.description
                     )
                     lines.append(f"  - {desc}")
+                if task and model.group_label:
+                    lines.append(f"  - *Family: {model.group_label}*")
+
+            return [TextContent(type="text", text="\n".join(lines))]
+
+        # Recommend models for a task
+        elif name == "recommend_model":
+            task = arguments.get("task")
+            if not task:
+                return [
+                    TextContent(
+                        type="text",
+                        text="❌ Please describe your task (e.g., 'generate professional headshot').",
+                    )
+                ]
+
+            category = arguments.get("category")
+            limit = arguments.get("limit", 5)
+
+            recommend_result = await registry.recommend_models(
+                task=task, category=category, limit=limit
+            )
+            recommendations = recommend_result.recommendations
+
+            if not recommendations:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"No models found for task: '{task}'. Try a different description or remove the category filter.",
+                    )
+                ]
+
+            # Format output
+            lines = [f'## 🎯 Recommended Models for: "{task}"\n']
+
+            # Add fallback warning if API search failed
+            if recommend_result.used_fallback:
+                lines.append(
+                    f"⚠️ *Using cached results ({recommend_result.fallback_reason}). Results may be less relevant.*\n"
+                )
+
+            for i, rec in enumerate(recommendations, 1):
+                highlighted_badge = " ⭐" if rec.get("highlighted") else ""
+                lines.append(f"### {i}. `{rec['model_id']}`{highlighted_badge}")
+                if rec.get("name"):
+                    lines.append(f"**{rec['name']}**")
+                if rec.get("description"):
+                    desc = (
+                        rec["description"][:200] + "..."
+                        if len(rec["description"]) > 200
+                        else rec["description"]
+                    )
+                    lines.append(f"{desc}")
+                lines.append(f"- **Category**: {rec.get('category', 'Unknown')}")
+                if rec.get("group"):
+                    lines.append(f"- **Family**: {rec['group']}")
+                lines.append(f"- **Why**: {rec.get('reason', 'Matches your search')}")
+                lines.append("")
+
+            lines.append(
+                "\n💡 **Tip**: Use the model_id with generate_image, generate_video, or generate_music tools."
+            )
 
             return [TextContent(type="text", text="\n".join(lines))]
 

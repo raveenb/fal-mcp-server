@@ -72,6 +72,7 @@ async def test_list_tools():
 
     tool_names = [t.name for t in tools]
     assert "list_models" in tool_names
+    assert "recommend_model" in tool_names
     assert "get_pricing" in tool_names
     assert "get_usage" in tool_names
     assert "generate_image" in tool_names
@@ -340,6 +341,121 @@ async def test_resolve_model_id_alias():
 
     result = await registry.resolve_model_id("musicgen")
     assert result == "fal-ai/musicgen-medium"
+
+
+@pytest.mark.asyncio
+async def test_recommend_model_tool_schema():
+    """Test that recommend_model tool has correct schema"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    recommend_tool = next(t for t in tools if t.name == "recommend_model")
+
+    assert recommend_tool is not None
+    props = recommend_tool.inputSchema["properties"]
+
+    # Check task parameter (required)
+    assert "task" in props
+    assert props["task"]["type"] == "string"
+
+    # Check category parameter (optional)
+    assert "category" in props
+    assert props["category"]["type"] == "string"
+    assert "image" in props["category"]["enum"]
+    assert "video" in props["category"]["enum"]
+    assert "audio" in props["category"]["enum"]
+
+    # Check limit parameter
+    assert "limit" in props
+    assert props["limit"]["type"] == "integer"
+    assert props["limit"]["default"] == 5
+    assert props["limit"]["minimum"] == 1
+    assert props["limit"]["maximum"] == 10
+
+    # Only task is required
+    assert recommend_tool.inputSchema["required"] == ["task"]
+
+
+@pytest.mark.asyncio
+async def test_list_models_tool_schema_with_task():
+    """Test that list_models tool has task parameter for intelligent ranking"""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    list_models_tool = next(t for t in tools if t.name == "list_models")
+
+    assert list_models_tool is not None
+    props = list_models_tool.inputSchema["properties"]
+
+    # Check task parameter exists
+    assert "task" in props
+    assert props["task"]["type"] == "string"
+
+    # Check search parameter still exists
+    assert "search" in props
+    assert props["search"]["type"] == "string"
+
+    # Check category parameter
+    assert "category" in props
+    assert "image" in props["category"]["enum"]
+
+    # All parameters are optional
+    assert list_models_tool.inputSchema["required"] == []
+
+
+def test_fal_model_dataclass_fields():
+    """Test that FalModel dataclass has all required fields including new ones"""
+    from fal_mcp_server.model_registry import FalModel
+
+    # Create a model with all fields
+    model = FalModel(
+        id="fal-ai/flux-pro",
+        name="Flux Pro",
+        description="High-quality image generation",
+        category="text-to-image",
+        owner="fal-ai",
+        thumbnail_url="https://example.com/thumb.png",
+        highlighted=True,
+        group_key="flux",
+        group_label="Flux Family",
+        status="active",
+        tags=["image", "generation"],
+    )
+
+    # Verify all fields
+    assert model.id == "fal-ai/flux-pro"
+    assert model.name == "Flux Pro"
+    assert model.description == "High-quality image generation"
+    assert model.category == "text-to-image"
+    assert model.owner == "fal-ai"
+    assert model.thumbnail_url == "https://example.com/thumb.png"
+    assert model.highlighted is True
+    assert model.group_key == "flux"
+    assert model.group_label == "Flux Family"
+    assert model.status == "active"
+    assert model.tags == ["image", "generation"]
+
+
+def test_fal_model_default_values():
+    """Test that FalModel has correct default values for new fields"""
+    from fal_mcp_server.model_registry import FalModel
+
+    # Create a model with minimal required fields
+    model = FalModel(
+        id="test-model",
+        name="Test Model",
+        description="Test description",
+        category="text-to-image",
+    )
+
+    # Check default values
+    assert model.highlighted is False
+    assert model.group_key is None
+    assert model.group_label is None
+    assert model.status == "active"
+    assert model.tags is None
+    assert model.owner == ""
+    assert model.thumbnail_url is None
 
 
 if __name__ == "__main__":

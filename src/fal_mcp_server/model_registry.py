@@ -25,6 +25,11 @@ class FalModel:
     category: str  # e.g., "text-to-image", "image-to-video", "audio"
     owner: str = ""  # e.g., "fal-ai"
     thumbnail_url: Optional[str] = None
+    highlighted: bool = False  # Featured/recommended model
+    group_key: Optional[str] = None  # Model family grouping key
+    group_label: Optional[str] = None  # Model family display name
+    status: str = "active"  # Model status (active, deprecated)
+    tags: Optional[List[str]] = None  # Model tags for categorization
 
 
 @dataclass
@@ -36,6 +41,24 @@ class ModelCache:
     by_category: Dict[str, List[str]]  # category -> list of model_ids
     fetched_at: float  # timestamp
     ttl_seconds: int = 3600  # 1 hour default
+
+
+@dataclass
+class SearchResult:
+    """Result from search_models with fallback indicator."""
+
+    models: List[FalModel]
+    used_fallback: bool = False  # True if results came from local cache
+    fallback_reason: Optional[str] = None  # Why fallback was used
+
+
+@dataclass
+class RecommendationResult:
+    """Result from recommend_models with fallback indicator."""
+
+    recommendations: List[Dict[str, Any]]
+    used_fallback: bool = False  # True if search fell back to cache
+    fallback_reason: Optional[str] = None  # Why fallback was used
 
 
 class ModelRegistry:
@@ -196,6 +219,9 @@ class ModelRegistry:
             # Extract owner from endpoint_id (e.g., "fal-ai/flux/dev" -> "fal-ai")
             owner = model_id.split("/")[0] if "/" in model_id else ""
 
+            # Extract group info (nested under "group" key)
+            group = raw.get("group", {})
+
             model = FalModel(
                 id=model_id,
                 name=metadata.get("display_name", model_id),
@@ -203,6 +229,11 @@ class ModelRegistry:
                 category=metadata.get("category", ""),
                 owner=owner,
                 thumbnail_url=metadata.get("thumbnail_url"),
+                highlighted=raw.get("highlighted", False),
+                group_key=group.get("key") if group else None,
+                group_label=group.get("label") if group else None,
+                status=raw.get("status", "active"),
+                tags=metadata.get("tags"),
             )
             models[model_id] = model
 
@@ -390,6 +421,187 @@ class ModelRegistry:
             ]
 
         return models[:limit]
+
+    async def search_models(
+        self,
+        query: str,
+        category: Optional[str] = None,
+        limit: int = 10,
+    ) -> SearchResult:
+        """
+        Search models using Fal API's semantic search.
+
+        Uses the API's `q` parameter for free-text search across model name,
+        description, and category. Results are sorted with highlighted models first.
+
+        Args:
+            query: Free-text search query (e.g., "portrait photo", "anime style")
+            category: Optional category filter ("text-to-image", "image-to-video", etc.)
+            limit: Maximum number of results
+
+        Returns:
+            SearchResult with models and fallback indicator
+        """
+        client = await self._get_http_client()
+        params: Dict[str, Any] = {"q": query, "limit": limit, "status": "active"}
+        if category:
+            params["category"] = category
+
+        fallback_reason: Optional[str] = None
+        try:
+            response = await client.get("/models", params=params)
+            response.raise_for_status()
+            data: Dict[str, Any] = response.json()
+        except httpx.HTTPStatusError as e:
+            fallback_reason = f"API error (HTTP {e.response.status_code})"
+            logger.error(
+                "Search API returned HTTP %d for query '%s': %s",
+                e.response.status_code,
+                query,
+                e,
+            )
+        except httpx.TimeoutException:
+            fallback_reason = "API timeout"
+            logger.error("Search API timeout for query '%s'", query)
+        except httpx.ConnectError as e:
+            fallback_reason = "Connection error"
+            logger.error("Cannot connect to search API for query '%s': %s", query, e)
+        except Exception as e:
+            fallback_reason = "Unexpected error"
+            logger.exception(
+                "Unexpected error searching models for query '%s': %s", query, e
+            )
+
+        # If fallback needed, use local cache search
+        if fallback_reason:
+            fallback_models = await self.list_models(
+                category=self._map_to_simple_category(category) if category else None,
+                search=query,
+                limit=limit,
+            )
+            return SearchResult(
+                models=fallback_models,
+                used_fallback=True,
+                fallback_reason=fallback_reason,
+            )
+
+        raw_models = data.get("models", [])
+        models: List[FalModel] = []
+
+        for raw in raw_models:
+            model_id = raw.get("endpoint_id", "")
+            if not model_id:
+                continue
+
+            metadata = raw.get("metadata", {})
+            group = raw.get("group", {})
+            owner = model_id.split("/")[0] if "/" in model_id else ""
+
+            model = FalModel(
+                id=model_id,
+                name=metadata.get("display_name", model_id),
+                description=metadata.get("description", ""),
+                category=metadata.get("category", ""),
+                owner=owner,
+                thumbnail_url=metadata.get("thumbnail_url"),
+                highlighted=raw.get("highlighted", False),
+                group_key=group.get("key") if group else None,
+                group_label=group.get("label") if group else None,
+                status=raw.get("status", "active"),
+                tags=metadata.get("tags"),
+            )
+            models.append(model)
+
+        # Sort: highlighted models first, then by name
+        models.sort(key=lambda m: (not m.highlighted, m.name.lower()))
+
+        return SearchResult(models=models[:limit], used_fallback=False)
+
+    def _map_to_simple_category(self, api_category: str) -> Optional[str]:
+        """Map API category to our simplified category system."""
+        return self.CATEGORY_MAPPING.get(api_category)
+
+    async def recommend_models(
+        self,
+        task: str,
+        category: Optional[str] = None,
+        limit: int = 5,
+    ) -> RecommendationResult:
+        """
+        Recommend the best models for a given task.
+
+        Uses semantic search and prioritizes highlighted (featured) models.
+        Returns models with relevance reasoning.
+
+        Args:
+            task: Description of the task (e.g., "generate professional headshot")
+            category: Optional category hint ("image", "video", "audio")
+            limit: Maximum number of recommendations
+
+        Returns:
+            RecommendationResult with recommendations and fallback indicator
+        """
+        # Map simplified category to API category if provided
+        api_category = None
+        if category:
+            # Use primary mapping for each simplified category
+            category_to_api = {
+                "image": "text-to-image",
+                "video": "text-to-video",
+                "audio": "text-to-audio",
+            }
+            api_category = category_to_api.get(category)
+
+        # Search using the task as query
+        search_result = await self.search_models(
+            query=task, category=api_category, limit=limit * 2
+        )
+
+        # Build recommendations with reasoning
+        recommendations: List[Dict[str, Any]] = []
+        for model in search_result.models[:limit]:
+            rec = {
+                "model_id": model.id,
+                "name": model.name,
+                "description": model.description,
+                "category": model.category,
+                "highlighted": model.highlighted,
+                "group": model.group_label,
+                "reason": self._generate_recommendation_reason(model, task),
+            }
+            recommendations.append(rec)
+
+        return RecommendationResult(
+            recommendations=recommendations,
+            used_fallback=search_result.used_fallback,
+            fallback_reason=search_result.fallback_reason,
+        )
+
+    def _generate_recommendation_reason(self, model: FalModel, task: str) -> str:
+        """Generate a human-readable reason for recommending this model."""
+        reasons = []
+
+        if model.highlighted:
+            reasons.append("Featured model by Fal.ai")
+
+        if model.group_label:
+            reasons.append(f"Part of {model.group_label} family")
+
+        category_desc = {
+            "text-to-image": "text-to-image generation",
+            "image-to-image": "image transformation",
+            "image-to-video": "image-to-video animation",
+            "text-to-video": "text-to-video generation",
+            "text-to-audio": "audio generation",
+            "speech-to-text": "speech transcription",
+        }
+        if model.category in category_desc:
+            reasons.append(f"Supports {category_desc[model.category]}")
+
+        if not reasons:
+            reasons.append(f"Matches search for '{task}'")
+
+        return "; ".join(reasons)
 
     async def get_model(self, model_id: str) -> Optional[FalModel]:
         """Get a specific model by ID."""
