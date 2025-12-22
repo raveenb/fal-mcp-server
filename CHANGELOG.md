@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.13.1 (2025-12-22)
+
+### Refactoring
+
+- Convert server files to thin wrappers using shared handlers
+  ([#86](https://github.com/raveenb/fal-mcp-server/pull/86),
+  [`a42888d`](https://github.com/raveenb/fal-mcp-server/commit/a42888d567e75649de5bd32d5b90f35c4618ece7))
+
+
 ## v1.13.0 (2025-12-22)
 
 ### Bug Fixes
