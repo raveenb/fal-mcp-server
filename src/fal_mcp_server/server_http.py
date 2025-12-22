@@ -104,7 +104,7 @@ async def list_tools() -> List[Tool]:
         ),
         Tool(
             name="recommend_model",
-            description="Get AI-powered model recommendations for a specific task. Describes what you want to do (e.g., 'generate portrait photo', 'anime style illustration', 'product photography') and get the best-suited models ranked by relevance. Featured models by Fal.ai are prioritized.",
+            description="Get AI-powered model recommendations for a specific task. Describe what you want to do (e.g., 'generate portrait photo', 'anime style illustration', 'product photography') and get the best-suited models ranked by relevance. Featured models by Fal.ai are prioritized.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -373,6 +373,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             search = arguments.get("search")
             limit = arguments.get("limit", 20)
 
+            used_fallback = False
+            fallback_warning = ""
+
             # If task is provided, use semantic search with API
             if task:
                 # Map simplified category to API category for search
@@ -385,11 +388,19 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     }
                     api_category = category_map.get(category)
 
-                models = await registry.search_models(
+                search_result = await registry.search_models(
                     query=task, category=api_category, limit=limit
                 )
-                title = f'## Models for: "{task}" ({len(models)} found)\n'
-                subtitle = "💡 *Sorted by relevance. ⭐ = Featured by Fal.ai*\n"
+                models = search_result.models
+                used_fallback = search_result.used_fallback
+
+                if used_fallback:
+                    title = f'## Models for: "{task}" ({len(models)} found)\n'
+                    fallback_warning = f"⚠️ *Using cached results ({search_result.fallback_reason}). Results may be less relevant.*\n"
+                    subtitle = "💡 *⭐ = Featured by Fal.ai*\n"
+                else:
+                    title = f'## Models for: "{task}" ({len(models)} found)\n'
+                    subtitle = "💡 *Sorted by relevance. ⭐ = Featured by Fal.ai*\n"
             else:
                 # Standard list with optional search filter
                 models = await registry.list_models(
@@ -408,6 +419,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
             # Format output
             lines = [title]
+            if fallback_warning:
+                lines.append(fallback_warning)
             if subtitle:
                 lines.append(subtitle)
 
@@ -443,18 +456,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             category = arguments.get("category")
             limit = arguments.get("limit", 5)
 
-            try:
-                recommendations = await registry.recommend_models(
-                    task=task, category=category, limit=limit
-                )
-            except Exception as e:
-                logger.error("Failed to get model recommendations: %s", e)
-                return [
-                    TextContent(
-                        type="text",
-                        text=f"❌ Failed to get recommendations: {e}",
-                    )
-                ]
+            result = await registry.recommend_models(
+                task=task, category=category, limit=limit
+            )
+            recommendations = result.recommendations
 
             if not recommendations:
                 return [
@@ -466,6 +471,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 
             # Format output
             lines = [f'## 🎯 Recommended Models for: "{task}"\n']
+
+            # Add fallback warning if API search failed
+            if result.used_fallback:
+                lines.append(
+                    f"⚠️ *Using cached results ({result.fallback_reason}). Results may be less relevant.*\n"
+                )
+
             for i, rec in enumerate(recommendations, 1):
                 highlighted_badge = " ⭐" if rec.get("highlighted") else ""
                 lines.append(f"### {i}. `{rec['model_id']}`{highlighted_badge}")

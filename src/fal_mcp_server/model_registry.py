@@ -43,6 +43,24 @@ class ModelCache:
     ttl_seconds: int = 3600  # 1 hour default
 
 
+@dataclass
+class SearchResult:
+    """Result from search_models with fallback indicator."""
+
+    models: List[FalModel]
+    used_fallback: bool = False  # True if results came from local cache
+    fallback_reason: Optional[str] = None  # Why fallback was used
+
+
+@dataclass
+class RecommendationResult:
+    """Result from recommend_models with fallback indicator."""
+
+    recommendations: List[Dict[str, Any]]
+    used_fallback: bool = False  # True if search fell back to cache
+    fallback_reason: Optional[str] = None  # Why fallback was used
+
+
 class ModelRegistry:
     """
     Manages model discovery from Fal.ai API with caching.
@@ -409,7 +427,7 @@ class ModelRegistry:
         query: str,
         category: Optional[str] = None,
         limit: int = 10,
-    ) -> List[FalModel]:
+    ) -> SearchResult:
         """
         Search models using Fal API's semantic search.
 
@@ -422,24 +440,49 @@ class ModelRegistry:
             limit: Maximum number of results
 
         Returns:
-            List of FalModel objects, sorted by relevance with highlighted first
+            SearchResult with models and fallback indicator
         """
         client = await self._get_http_client()
         params: Dict[str, Any] = {"q": query, "limit": limit, "status": "active"}
         if category:
             params["category"] = category
 
+        fallback_reason: Optional[str] = None
         try:
             response = await client.get("/models", params=params)
             response.raise_for_status()
             data: Dict[str, Any] = response.json()
+        except httpx.HTTPStatusError as e:
+            fallback_reason = f"API error (HTTP {e.response.status_code})"
+            logger.error(
+                "Search API returned HTTP %d for query '%s': %s",
+                e.response.status_code,
+                query,
+                e,
+            )
+        except httpx.TimeoutException:
+            fallback_reason = "API timeout"
+            logger.error("Search API timeout for query '%s'", query)
+        except httpx.ConnectError as e:
+            fallback_reason = "Connection error"
+            logger.error("Cannot connect to search API for query '%s': %s", query, e)
         except Exception as e:
-            logger.error("Failed to search models: %s", e)
-            # Fallback to local cache search
-            return await self.list_models(
+            fallback_reason = "Unexpected error"
+            logger.exception(
+                "Unexpected error searching models for query '%s': %s", query, e
+            )
+
+        # If fallback needed, use local cache search
+        if fallback_reason:
+            fallback_models = await self.list_models(
                 category=self._map_to_simple_category(category) if category else None,
                 search=query,
                 limit=limit,
+            )
+            return SearchResult(
+                models=fallback_models,
+                used_fallback=True,
+                fallback_reason=fallback_reason,
             )
 
         raw_models = data.get("models", [])
@@ -472,7 +515,7 @@ class ModelRegistry:
         # Sort: highlighted models first, then by name
         models.sort(key=lambda m: (not m.highlighted, m.name.lower()))
 
-        return models[:limit]
+        return SearchResult(models=models[:limit], used_fallback=False)
 
     def _map_to_simple_category(self, api_category: str) -> Optional[str]:
         """Map API category to our simplified category system."""
@@ -483,7 +526,7 @@ class ModelRegistry:
         task: str,
         category: Optional[str] = None,
         limit: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> RecommendationResult:
         """
         Recommend the best models for a given task.
 
@@ -496,25 +539,27 @@ class ModelRegistry:
             limit: Maximum number of recommendations
 
         Returns:
-            List of dicts with model info and recommendation reasoning
+            RecommendationResult with recommendations and fallback indicator
         """
         # Map simplified category to API category if provided
         api_category = None
         if category:
-            # Reverse lookup from our category to API category
-            for api_cat, simple_cat in self.CATEGORY_MAPPING.items():
-                if simple_cat == category:
-                    api_category = api_cat
-                    break
+            # Use primary mapping for each simplified category
+            category_to_api = {
+                "image": "text-to-image",
+                "video": "text-to-video",
+                "audio": "text-to-audio",
+            }
+            api_category = category_to_api.get(category)
 
         # Search using the task as query
-        models = await self.search_models(
+        search_result = await self.search_models(
             query=task, category=api_category, limit=limit * 2
         )
 
         # Build recommendations with reasoning
         recommendations: List[Dict[str, Any]] = []
-        for model in models[:limit]:
+        for model in search_result.models[:limit]:
             rec = {
                 "model_id": model.id,
                 "name": model.name,
@@ -526,7 +571,11 @@ class ModelRegistry:
             }
             recommendations.append(rec)
 
-        return recommendations
+        return RecommendationResult(
+            recommendations=recommendations,
+            used_fallback=search_result.used_fallback,
+            fallback_reason=search_result.fallback_reason,
+        )
 
     def _generate_recommendation_reason(self, model: FalModel, task: str) -> str:
         """Generate a human-readable reason for recommending this model."""
