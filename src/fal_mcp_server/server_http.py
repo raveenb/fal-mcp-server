@@ -9,9 +9,8 @@ import sys
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, cast
 
-import httpx
-
 import fal_client
+import httpx
 import uvicorn
 from loguru import logger
 

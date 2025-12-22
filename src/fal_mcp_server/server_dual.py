@@ -10,9 +10,8 @@ import threading
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
-import httpx
-
 import fal_client
+import httpx
 import mcp.server.stdio
 import uvicorn
 from loguru import logger
