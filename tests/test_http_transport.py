@@ -40,7 +40,7 @@ def test_dual_server_initialization():
     # Check initialization options
     init_options = server.get_initialization_options()
     assert init_options.server_name == "fal-ai-mcp"
-    assert init_options.server_version == "1.2.0"
+    assert init_options.server_version == "1.14.0"
     assert init_options.capabilities.tools is not None
 
 
