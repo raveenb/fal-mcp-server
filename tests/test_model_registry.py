@@ -144,7 +144,9 @@ class TestModelRegistry:
             model_ids = [m.id for m in all_models]
             assert "fal-ai/flux/schnell" in model_ids
             assert "fal-ai/kling-video" in model_ids
-            assert "fal-ai/lyria2" in model_ids  # Updated: musicgen-medium no longer exists
+            assert (
+                "fal-ai/lyria2" in model_ids
+            )  # Updated: musicgen-medium no longer exists
 
     def test_cache_ttl_expiration(self, registry):
         """Test that cache expires after TTL."""
