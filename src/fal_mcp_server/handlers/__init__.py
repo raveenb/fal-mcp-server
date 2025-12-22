@@ -22,6 +22,7 @@ from fal_mcp_server.handlers.utility_handlers import (
 from fal_mcp_server.handlers.video_handlers import (
     handle_generate_video,
     handle_generate_video_from_image,
+    handle_generate_video_from_video,
 )
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     # Video handlers
     "handle_generate_video",
     "handle_generate_video_from_image",
+    "handle_generate_video_from_video",
     # Audio handlers
     "handle_generate_music",
 ]

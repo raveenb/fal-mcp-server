@@ -37,6 +37,7 @@ from fal_mcp_server.handlers import (
     handle_generate_music,
     handle_generate_video,
     handle_generate_video_from_image,
+    handle_generate_video_from_video,
     handle_get_pricing,
     handle_get_usage,
     handle_list_models,
@@ -72,6 +73,7 @@ TOOL_HANDLERS = {
     # Video tools
     "generate_video": handle_generate_video,
     "generate_video_from_image": handle_generate_video_from_image,
+    "generate_video_from_video": handle_generate_video_from_video,
     # Audio tools
     "generate_music": handle_generate_music,
 }
