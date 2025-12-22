@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v1.12.0 (2025-12-22)
+
+### Bug Fixes
+
+- Add transparent fallback warnings when API search fails
+  ([#80](https://github.com/raveenb/fal-mcp-server/pull/80),
+  [`746c846`](https://github.com/raveenb/fal-mcp-server/commit/746c846dddc0cce8e6645bc0a729a08d631b0993))
+
+- Resolve mypy type errors by renaming result variable
+  ([#80](https://github.com/raveenb/fal-mcp-server/pull/80),
+  [`746c846`](https://github.com/raveenb/fal-mcp-server/commit/746c846dddc0cce8e6645bc0a729a08d631b0993))
+
+### Features
+
+- Add intelligent model selection using Fal Platform API (#79)
+  ([#80](https://github.com/raveenb/fal-mcp-server/pull/80),
+  [`746c846`](https://github.com/raveenb/fal-mcp-server/commit/746c846dddc0cce8e6645bc0a729a08d631b0993))
+
+- Add intelligent model selection with recommend_model tool and task-aware list_models
+  ([#80](https://github.com/raveenb/fal-mcp-server/pull/80),
+  [`746c846`](https://github.com/raveenb/fal-mcp-server/commit/746c846dddc0cce8e6645bc0a729a08d631b0993))
+
+
 ## v1.11.0 (2025-12-21)
 
 ### Bug Fixes
