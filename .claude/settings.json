@@ -1,0 +1,162 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v osascript >/dev/null 2>&1; then osascript -e 'display notification \"Tool: $CLAUDE_TOOL_NAME completed\" with title \"Claude Code\"'; elif command -v notify-send >/dev/null 2>&1; then notify-send 'Claude Code' \"Tool: $CLAUDE_TOOL_NAME completed\"; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.js || \"$CLAUDE_TOOL_FILE_PATH\" == *.ts || \"$CLAUDE_TOOL_FILE_PATH\" == *.jsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.tsx ]]; then npx eslint \"$CLAUDE_TOOL_FILE_PATH\" --fix 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.py ]]; then pylint \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.rb ]]; then rubocop \"$CLAUDE_TOOL_FILE_PATH\" --auto-correct 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v osascript >/dev/null 2>&1; then osascript -e 'display notification \"Tool: $CLAUDE_TOOL_NAME completed\" with title \"Claude Code\"'; elif command -v notify-send >/dev/null 2>&1; then notify-send 'Claude Code' \"Tool: $CLAUDE_TOOL_NAME completed\"; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.js || \"$CLAUDE_TOOL_FILE_PATH\" == *.ts || \"$CLAUDE_TOOL_FILE_PATH\" == *.jsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.tsx ]]; then npx eslint \"$CLAUDE_TOOL_FILE_PATH\" --fix 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.py ]]; then pylint \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.rb ]]; then rubocop \"$CLAUDE_TOOL_FILE_PATH\" --auto-correct 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] File modified: $CLAUDE_TOOL_FILE_PATH\" >> ~/.claude/changes.log"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] File created: $CLAUDE_TOOL_FILE_PATH\" >> ~/.claude/changes.log"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if git rev-parse --git-dir >/dev/null 2>&1 && [[ -n \"$CLAUDE_TOOL_FILE_PATH\" ]]; then git add \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null; CHANGED_LINES=$(git diff --cached --numstat \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null | awk '{print $1+$2}'); if [[ $CHANGED_LINES -gt 0 ]]; then FILENAME=$(basename \"$CLAUDE_TOOL_FILE_PATH\"); if [[ $CHANGED_LINES -lt 10 ]]; then SIZE=\"minor\"; elif [[ $CHANGED_LINES -lt 50 ]]; then SIZE=\"moderate\"; else SIZE=\"major\"; fi; MSG=\"Update $FILENAME: $SIZE changes ($CHANGED_LINES lines)\"; git commit -m \"$MSG\" \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if git rev-parse --git-dir >/dev/null 2>&1 && [[ -n \"$CLAUDE_TOOL_FILE_PATH\" ]]; then git add \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null; FILENAME=$(basename \"$CLAUDE_TOOL_FILE_PATH\"); git commit -m \"Add new file: $FILENAME\" \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.js || \"$CLAUDE_TOOL_FILE_PATH\" == *.ts || \"$CLAUDE_TOOL_FILE_PATH\" == *.jsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.tsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.json || \"$CLAUDE_TOOL_FILE_PATH\" == *.css || \"$CLAUDE_TOOL_FILE_PATH\" == *.html ]]; then npx prettier --write \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.py ]]; then black \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.go ]]; then gofmt -w \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.rs ]]; then rustfmt \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.php ]]; then php-cs-fixer fix \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *package.json || \"$CLAUDE_TOOL_FILE_PATH\" == *requirements.txt || \"$CLAUDE_TOOL_FILE_PATH\" == *Cargo.toml || \"$CLAUDE_TOOL_FILE_PATH\" == *pom.xml || \"$CLAUDE_TOOL_FILE_PATH\" == *Gemfile ]]; then echo \"Dependency file modified: $CLAUDE_TOOL_FILE_PATH\"; if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *package.json ]] && command -v npm >/dev/null 2>&1; then npm audit 2>/dev/null || true; npx npm-check-updates 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *requirements.txt ]] && command -v safety >/dev/null 2>&1; then safety check -r \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *Cargo.toml ]] && command -v cargo >/dev/null 2>&1; then cargo audit 2>/dev/null || true; fi; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" =~ \\.(js|ts|jsx|tsx)$ ]]; then npx prettier --write \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"$(date +%s.%N),$(ps -o %cpu= -p $$),$(ps -o rss= -p $$),$CLAUDE_TOOL_NAME,end\" >> ~/.claude/performance.csv; if [[ $(wc -l < ~/.claude/performance.csv) -gt 1000 ]]; then tail -n 500 ~/.claude/performance.csv > ~/.claude/performance.csv.tmp && mv ~/.claude/performance.csv.tmp ~/.claude/performance.csv; fi"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date)] Tool: $CLAUDE_TOOL_NAME | File: $CLAUDE_TOOL_FILE_PATH\" >> ~/.claude/command-log.txt"
+          }
+        ]
+      },
+      {
+        "matcher": "WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import json, sys, re; from datetime import datetime; input_data = json.load(sys.stdin); tool_input = input_data.get('tool_input', {}); query = tool_input.get('query', ''); current_year = str(datetime.now().year); has_year = re.search(r'\\\\b20\\\\d{2}\\\\b', query); has_temporal = any(word in query.lower() for word in ['latest', 'recent', 'current', 'new', 'now', 'today']); should_add_year = not has_year and not has_temporal; modified_query = f'{query} {current_year}' if should_add_year else query; output = {'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'modifiedToolInput': {'query': modified_query}}}; print(json.dumps(output)); sys.exit(0)\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ -n \"$CLAUDE_TOOL_FILE_PATH\" && -f \"$CLAUDE_TOOL_FILE_PATH\" ]]; then mkdir -p .backups && cp \"$CLAUDE_TOOL_FILE_PATH\" \".backups/$(basename \"$CLAUDE_TOOL_FILE_PATH\").$(date +%Y%m%d_%H%M%S).bak\"; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"$(date +%s.%N),$(ps -o %cpu= -p $$),$(ps -o rss= -p $$),$CLAUDE_TOOL_NAME,start\" >> ~/.claude/performance.csv"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PROTECTED_PATTERNS=('*/etc/*' '*/usr/bin/*' '*/usr/sbin/*' '*.production.*' '*prod*config*' '*/node_modules/*' '*/vendor/*'); for pattern in \"${PROTECTED_PATTERNS[@]}\"; do if [[ \"$CLAUDE_TOOL_FILE_PATH\" == $pattern ]]; then echo \"Error: File $CLAUDE_TOOL_FILE_PATH is protected from modification\" >&2; exit 1; fi; done"
+          }
+        ]
+      }
+    ]
+  }
+}
