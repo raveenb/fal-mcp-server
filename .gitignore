@@ -71,3 +71,4 @@ mcp-server-*.log
 # Windows
 Thumbs.db
 ehthumbs.db
+.playwright-mcp
