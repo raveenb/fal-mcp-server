@@ -89,8 +89,9 @@ class ModelRegistry:
         "animatediff": "fal-ai/fast-animatediff",
         "kling": "fal-ai/kling-video",
         # Audio models
-        "musicgen": "fal-ai/musicgen-medium",
-        "musicgen_large": "fal-ai/musicgen-large",
+        "musicgen": "fal-ai/lyria2",  # Updated: musicgen-medium no longer exists
+        "lyria2": "fal-ai/lyria2",
+        "stable_audio": "fal-ai/stable-audio-25/text-to-audio",
         "bark": "fal-ai/bark",
         "whisper": "fal-ai/whisper",
     }
@@ -123,7 +124,8 @@ class ModelRegistry:
         "kling": "video",
         # Audio models
         "musicgen": "audio",
-        "musicgen_large": "audio",
+        "lyria2": "audio",
+        "stable_audio": "audio",
         "bark": "audio",
         "whisper": "audio",
     }

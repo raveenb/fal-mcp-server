@@ -340,7 +340,7 @@ async def test_resolve_model_id_alias():
     assert result == "fal-ai/flux/schnell"
 
     result = await registry.resolve_model_id("musicgen")
-    assert result == "fal-ai/musicgen-medium"
+    assert result == "fal-ai/lyria2"  # Updated: musicgen-medium no longer exists
 
 
 @pytest.mark.asyncio
