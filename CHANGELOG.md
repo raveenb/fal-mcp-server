@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v1.18.0 (2025-12-23)
+
+### Bug Fixes
+
+- Add pillow and httpx dependencies for compose_images
+  ([#104](https://github.com/raveenb/fal-mcp-server/pull/104),
+  [`4d28122`](https://github.com/raveenb/fal-mcp-server/commit/4d2812236554e55b2ad0659136c9a9683417527b))
+
+- Address PR review issues for compose_images
+  ([#104](https://github.com/raveenb/fal-mcp-server/pull/104),
+  [`4d28122`](https://github.com/raveenb/fal-mcp-server/commit/4d2812236554e55b2ad0659136c9a9683417527b))
+
+### Features
+
+- Add compose_images tool for image compositing
+  ([#104](https://github.com/raveenb/fal-mcp-server/pull/104),
+  [`4d28122`](https://github.com/raveenb/fal-mcp-server/commit/4d2812236554e55b2ad0659136c9a9683417527b))
+
+
 ## v1.17.1 (2025-12-23)
 
 ### Bug Fixes
