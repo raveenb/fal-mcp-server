@@ -27,14 +27,27 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 - **HTTP/SSE** - Web-based access via Server-Sent Events
 - **Dual Mode** - Run both transports simultaneously
 
-### 🎨 Media Generation
-- 🖼️ **Image Generation** - Create images using Flux, SDXL, and other models
-- 🎬 **Video Generation** - Generate videos from images or text prompts
-- 🎵 **Music Generation** - Create music from text descriptions
-- 🗣️ **Text-to-Speech** - Convert text to natural speech
-- 📝 **Audio Transcription** - Transcribe audio using Whisper
-- ⬆️ **Image Upscaling** - Enhance image resolution
-- 🔄 **Image-to-Image** - Transform existing images with prompts
+### 🎨 Media Generation (12 Tools)
+
+**Image Tools:**
+- 🖼️ **generate_image** - Create images from text prompts (Flux, SDXL, etc.)
+- 🎯 **generate_image_structured** - Fine-grained control over composition, lighting, subjects
+- 🔄 **generate_image_from_image** - Transform existing images with style transfer
+
+**Video Tools:**
+- 🎬 **generate_video** - Text-to-video and image-to-video generation
+- 📹 **generate_video_from_image** - Animate images into videos
+- 🔀 **generate_video_from_video** - Video restyling and motion transfer (NEW!)
+
+**Audio Tools:**
+- 🎵 **generate_music** - Create instrumental music or songs with vocals
+
+**Utility Tools:**
+- 🔍 **list_models** - Discover 600+ available models with smart filtering
+- 💡 **recommend_model** - AI-powered model recommendations for your task
+- 💰 **get_pricing** - Check costs before generating content
+- 📊 **get_usage** - View spending history and usage stats
+- ⬆️ **upload_file** - Upload local files for use with generation tools
 
 ### 🔍 Dynamic Model Discovery (New!)
 - **600+ Models** - Access all models available on Fal.ai platform
@@ -138,6 +151,26 @@ curl -O https://raw.githubusercontent.com/raveenb/fal-mcp-server/main/docker-com
 echo "FAL_KEY=your-api-key" > .env
 docker-compose up -d
 ```
+
+**⚠️ File Upload with Docker:**
+
+The `upload_file` tool requires volume mounts to access host files:
+
+```bash
+docker run -d -p 8080:8080 \
+  -e FAL_KEY="${FAL_KEY}" \
+  -e FAL_MCP_TRANSPORT=http \
+  -v ${HOME}/Downloads:/downloads:ro \
+  -v ${HOME}/Pictures:/pictures:ro \
+  ghcr.io/raveenb/fal-mcp-server:latest
+```
+
+Then use container paths like `/downloads/image.png` instead of host paths.
+
+| Feature | stdio (uvx) | Docker (HTTP/SSE) |
+|---------|:-----------:|:-----------------:|
+| `upload_file` | ✅ Full filesystem | ⚠️ Needs volume mounts |
+| Security | Runs as user | Sandboxed container |
 
 #### Option 3: Install from PyPI
 
@@ -306,6 +339,81 @@ Use `list_models` with category filters to discover more:
 | [Local Testing](docs/LOCAL_TESTING.md) | Running CI locally with `act` |
 
 📖 **Full documentation site**: [raveenb.github.io/fal-mcp-server](https://raveenb.github.io/fal-mcp-server/)
+
+## 🔧 Troubleshooting
+
+### Common Errors
+
+#### FAL_KEY not set
+```
+Error: FAL_KEY environment variable is required
+```
+**Solution:** Set your Fal.ai API key:
+```bash
+export FAL_KEY="your-api-key"
+```
+
+#### Model not found
+```
+Error: Model 'xyz' not found
+```
+**Solution:** Use `list_models` to discover available models, or check the model ID spelling.
+
+#### File not found (Docker)
+```
+Error: File not found: /Users/username/image.png
+```
+**Solution:** When using Docker, mount the directory as a volume. See [File Upload with Docker](#-file-upload-with-docker) above.
+
+#### Timeout on video/music generation
+```
+Error: Generation timed out after 300s
+```
+**Solution:** Video and music generation can take several minutes. This is normal for high-quality models. Try:
+- Using a faster model variant (e.g., `schnell` instead of `pro`)
+- Reducing duration or resolution
+
+#### Rate limiting
+```
+Error: Rate limit exceeded
+```
+**Solution:** Wait a few minutes and retry. Consider upgrading your Fal.ai plan for higher limits.
+
+### Debug Mode
+
+Enable verbose logging for troubleshooting:
+
+```bash
+# Set debug environment variable
+export FAL_MCP_DEBUG=true
+
+# Run the server
+fal-mcp
+```
+
+### Reporting Issues
+
+If you encounter a bug or unexpected behavior:
+
+1. **Check existing issues:** [GitHub Issues](https://github.com/raveenb/fal-mcp-server/issues)
+
+2. **Gather information:**
+   - Error message (full text)
+   - Steps to reproduce
+   - Model ID used
+   - Environment (OS, Python version, transport mode)
+
+3. **Open a new issue** with:
+   ```
+   **Error:** [paste error message]
+   **Steps to reproduce:** [what you did]
+   **Model:** [model ID if applicable]
+   **Environment:** [OS, Python version, Docker/uvx/pip]
+   ```
+
+4. **Include logs** if available (with sensitive data removed)
+
+[📝 Open an Issue](https://github.com/raveenb/fal-mcp-server/issues/new)
 
 ## 🤝 Contributing
 

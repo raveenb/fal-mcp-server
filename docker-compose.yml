@@ -12,6 +12,12 @@ services:
       - FAL_MCP_PORT=8080
     ports:
       - "8080:8080"
+    # Uncomment to enable upload_file from host directories:
+    # volumes:
+    #   - ${HOME}/Downloads:/downloads:ro
+    #   - ${HOME}/Pictures:/pictures:ro
+    #   - ${HOME}/Desktop:/desktop:ro
+    # Then use paths like /downloads/image.png in upload_file
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/sse').read()"]
