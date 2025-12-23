@@ -33,8 +33,8 @@ from fal_mcp_server.handlers import (
     handle_recommend_model,
     handle_remove_background,
     handle_resize_image,
-    handle_upscale_image,
     handle_upload_file,
+    handle_upscale_image,
 )
 
 # Model registry for dynamic model discovery
