@@ -7,12 +7,12 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  test-matrix:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
-    
+
     steps:
     - uses: actions/checkout@v6
     
@@ -47,3 +47,18 @@ jobs:
     - name: Type check with mypy
       run: |
         mypy src/
+
+  # Summary job that branch protection can reference
+  # This creates a single "test" status check instead of "test (3.10)", "test (3.11)", etc.
+  test:
+    needs: [test-matrix]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test matrix status
+        run: |
+          if [ "${{ needs.test-matrix.result }}" != "success" ]; then
+            echo "Test matrix failed with result: ${{ needs.test-matrix.result }}"
+            exit 1
+          fi
+          echo "All tests passed!"
