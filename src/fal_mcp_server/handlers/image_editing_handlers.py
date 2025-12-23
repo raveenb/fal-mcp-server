@@ -197,7 +197,7 @@ async def handle_edit_image(
         ]
 
     fal_args: Dict[str, Any] = {
-        "image_url": arguments["image_url"],
+        "image_urls": [arguments["image_url"]],  # Flux 2 Edit expects array
         "prompt": arguments["instruction"],
     }
 
