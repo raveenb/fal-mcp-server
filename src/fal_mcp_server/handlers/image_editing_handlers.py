@@ -36,6 +36,10 @@ async def handle_remove_background(
         "image_url": arguments["image_url"],
     }
 
+    # Add output format if specified (default is PNG)
+    if "output_format" in arguments:
+        fal_args["output_format"] = arguments["output_format"]
+
     logger.info("Starting background removal with %s", model_id)
 
     try:
@@ -531,12 +535,14 @@ async def _resize_with_crop(
     queue_strategy: QueueStrategy,
 ) -> List[TextContent]:
     """Resize image using smart cropping."""
-    # For now, we'll use a simple center crop approach
-    # In the future, we could use face detection or saliency models
-    # to find the best crop region
+    # Log usage of unimplemented feature for prioritization
+    logger.warning(
+        "User requested unimplemented crop mode. format=%s, dimensions=%dx%d",
+        format_label,
+        target_width,
+        target_height,
+    )
 
-    # Note: Fal.ai doesn't have a dedicated smart crop model
-    # We'll return guidance for the user
     return [
         TextContent(
             type="text",
@@ -559,9 +565,14 @@ async def _resize_with_letterbox(
     """Resize image by adding letterbox bars."""
     background_color = arguments.get("background_color", "#000000")
 
-    # Note: Fal.ai doesn't have a dedicated letterbox model
-    # We could potentially use an image manipulation library or
-    # a custom approach in the future
+    # Log usage of unimplemented feature for prioritization
+    logger.warning(
+        "User requested unimplemented letterbox mode. format=%s, dimensions=%dx%d, color=%s",
+        format_label,
+        target_width,
+        target_height,
+        background_color,
+    )
 
     return [
         TextContent(

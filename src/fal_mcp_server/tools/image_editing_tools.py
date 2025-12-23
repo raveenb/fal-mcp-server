@@ -147,7 +147,7 @@ IMAGE_EDITING_TOOLS: List[Tool] = [
     ),
     Tool(
         name="resize_image",
-        description="Resize/reformat images for different platforms (like Canva Magic Resize). Uses AI to intelligently extend, crop, or letterbox content for new aspect ratios.",
+        description="Resize/reformat images for different platforms (like Canva Magic Resize). Uses AI outpainting to intelligently extend content for new aspect ratios. Note: 'crop' and 'letterbox' modes coming soon.",
         inputSchema={
             "type": "object",
             "properties": {
@@ -191,7 +191,7 @@ IMAGE_EDITING_TOOLS: List[Tool] = [
                     "type": "string",
                     "enum": ["extend", "crop", "letterbox"],
                     "default": "extend",
-                    "description": "How to handle aspect ratio change: extend (AI outpainting), crop (smart crop), letterbox (add bars)",
+                    "description": "How to handle aspect ratio change: extend (AI outpainting - recommended), crop (coming soon), letterbox (coming soon)",
                 },
                 "background_prompt": {
                     "type": "string",
