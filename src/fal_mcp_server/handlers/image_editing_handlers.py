@@ -5,8 +5,10 @@ Contains: remove_background, upscale_image, edit_image, inpaint_image, resize_im
 """
 
 import asyncio
+import os
 import tempfile
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import fal_client
@@ -608,6 +610,16 @@ async def handle_compose_images(
     opacity = arguments.get("opacity", 1.0)
     output_format = arguments.get("output_format", "png")
 
+    # Validate custom position BEFORE any processing
+    if position == "custom":
+        if arguments.get("x") is None or arguments.get("y") is None:
+            return [
+                TextContent(
+                    type="text",
+                    text="❌ Custom position requires both 'x' and 'y' parameters.",
+                )
+            ]
+
     logger.info(
         "Composing images: overlay at %s with scale=%.2f, opacity=%.2f",
         position,
@@ -615,9 +627,10 @@ async def handle_compose_images(
         opacity,
     )
 
+    tmp_path: str | None = None
     try:
-        # Download both images
-        async with httpx.AsyncClient() as client:
+        # Download both images with timeout
+        async with httpx.AsyncClient(timeout=30.0) as client:
             base_response = await client.get(base_url)
             base_response.raise_for_status()
             overlay_response = await client.get(overlay_url)
@@ -645,16 +658,6 @@ async def handle_compose_images(
             arguments.get("y"),
         )
 
-        # Validate custom position
-        if position == "custom":
-            if arguments.get("x") is None or arguments.get("y") is None:
-                return [
-                    TextContent(
-                        type="text",
-                        text="❌ Custom position requires both 'x' and 'y' parameters.",
-                    )
-                ]
-
         # Apply opacity if not fully opaque
         if opacity < 1.0:
             overlay_img = _apply_opacity(overlay_img, opacity)
@@ -677,12 +680,7 @@ async def handle_compose_images(
 
         # Upload to Fal storage
         logger.info("Uploading composed image to Fal storage")
-        result_url = await fal_client.upload_file_async(tmp_path)
-
-        # Clean up temp file
-        import os
-
-        os.unlink(tmp_path)
+        result_url = await fal_client.upload_file_async(Path(tmp_path))
 
         response = "🖼️ Images composed successfully!\n\n"
         response += f"**Position**: {position}"
@@ -712,6 +710,15 @@ async def handle_compose_images(
                 text=f"❌ Image composition failed: {e}",
             )
         ]
+    finally:
+        # Always clean up temp file
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError as cleanup_error:
+                logger.warning(
+                    "Failed to clean up temp file %s: %s", tmp_path, cleanup_error
+                )
 
 
 def _calculate_overlay_position(
