@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.16.2 (2025-12-23)
+
+### Bug Fixes
+
+- Update marketplace.json owner email
+  ([`9d768d6`](https://github.com/raveenb/fal-mcp-server/commit/9d768d63b9b871fe29ccfc551edf11c6322527e4))
+
+### Documentation
+
+- Add Claude Code plugin installation instructions
+  ([`c202c7c`](https://github.com/raveenb/fal-mcp-server/commit/c202c7c52e8dacbe7db497af0f38bd7a89d54bc3))
+
+
 ## v1.16.1 (2025-12-23)
 
 ### Bug Fixes
