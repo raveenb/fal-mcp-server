@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.16.3 (2025-12-23)
+
+### Bug Fixes
+
+- Remove unrecognized fields from plugin.json
+  ([`acedd17`](https://github.com/raveenb/fal-mcp-server/commit/acedd17d47765053b26bdbe4a8774850e8678694))
+
+### Chores
+
+- Clean up Claude Code hooks and update startup reminders
+  ([`c0dc441`](https://github.com/raveenb/fal-mcp-server/commit/c0dc44118db4071598e29c34d988b3852bdac8b3))
+
+- Update uv.lock
+  ([`588223a`](https://github.com/raveenb/fal-mcp-server/commit/588223ad4a28fb653341ef180f5a33a4fea15fc8))
+
+
 ## v1.16.2 (2025-12-23)
 
 ### Bug Fixes
