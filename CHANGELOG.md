@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.17.1 (2025-12-23)
+
+### Bug Fixes
+
+- Use image_urls array for Flux 2 Edit API
+  ([`534d1e1`](https://github.com/raveenb/fal-mcp-server/commit/534d1e1ca9caf285136eef6270ec51a83f53309e))
+
+
 ## v1.17.0 (2025-12-23)
 
 ### Features
