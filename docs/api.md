@@ -11,7 +11,15 @@ Complete reference for all Fal MCP Server tools available in Claude.
 
 ## Available Tools
 
-The Fal MCP Server provides three main tools that Claude can use:
+The Fal MCP Server provides 18 tools organized into five categories:
+
+- **Image Generation** (3 tools): generate_image, generate_image_structured, generate_image_from_image
+- **Image Editing** (6 tools): remove_background, upscale_image, edit_image, inpaint_image, resize_image, compose_images
+- **Video** (3 tools): generate_video, generate_video_from_image, generate_video_from_video
+- **Audio** (1 tool): generate_music
+- **Utility** (5 tools): list_models, recommend_model, get_pricing, get_usage, upload_file
+
+## Image Generation Tools
 
 ### 🎨 generate_image
 
@@ -65,6 +73,206 @@ Generate images from text descriptions using various AI models.
 {
   "type": "text",
   "text": "🎨 Generated 2 image(s) with flux_dev:\n\nImage 1: https://fal.ai/generated/image1.jpg\nImage 2: https://fal.ai/generated/image2.jpg"
+}
+```
+
+---
+
+## Image Editing Tools
+
+### ✂️ remove_background
+
+Remove the background from an image, creating a transparent PNG.
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `image_url` | string | ✅ Yes | - | URL of the image to process |
+| `model` | string | No | `fal-ai/birefnet/v2` | Background removal model |
+| `output_format` | string | No | `png` | Output format (png, webp) |
+
+#### Example Usage
+
+```json
+{
+  "tool": "remove_background",
+  "arguments": {
+    "image_url": "https://example.com/photo.jpg"
+  }
+}
+```
+
+---
+
+### 🔍 upscale_image
+
+Upscale an image to higher resolution while preserving quality.
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `image_url` | string | ✅ Yes | - | URL of the image to upscale |
+| `scale` | integer | No | 2 | Upscale factor (2 or 4) |
+| `model` | string | No | `fal-ai/clarity-upscaler` | Upscaling model |
+
+#### Example Usage
+
+```json
+{
+  "tool": "upscale_image",
+  "arguments": {
+    "image_url": "https://example.com/lowres.jpg",
+    "scale": 4
+  }
+}
+```
+
+---
+
+### ✏️ edit_image
+
+Edit an image using natural language instructions.
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `image_url` | string | ✅ Yes | - | URL of the image to edit |
+| `instruction` | string | ✅ Yes | - | Natural language edit instruction |
+| `model` | string | No | `fal-ai/flux-2/edit` | Editing model |
+| `strength` | number | No | 0.75 | Edit strength (0-1) |
+| `seed` | integer | No | random | Seed for reproducible edits |
+
+#### Example Usage
+
+```json
+{
+  "tool": "edit_image",
+  "arguments": {
+    "image_url": "https://example.com/photo.jpg",
+    "instruction": "make the sky more dramatic with orange sunset colors"
+  }
+}
+```
+
+---
+
+### 🎭 inpaint_image
+
+Edit specific regions of an image using a mask.
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `image_url` | string | ✅ Yes | - | URL of the source image |
+| `mask_url` | string | ✅ Yes | - | URL of the mask (white=edit, black=keep) |
+| `prompt` | string | ✅ Yes | - | What to generate in masked area |
+| `model` | string | No | `fal-ai/flux-kontext-lora/inpaint` | Inpainting model |
+| `negative_prompt` | string | No | - | What to avoid |
+| `seed` | integer | No | random | Seed for reproducibility |
+
+#### Example Usage
+
+```json
+{
+  "tool": "inpaint_image",
+  "arguments": {
+    "image_url": "https://example.com/photo.jpg",
+    "mask_url": "https://example.com/mask.png",
+    "prompt": "a red sports car"
+  }
+}
+```
+
+---
+
+### 📐 resize_image
+
+Smart resize for different social media platforms using AI outpainting.
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `image_url` | string | ✅ Yes | - | URL of the source image |
+| `target_format` | string | ✅ Yes | - | Platform preset or "custom" |
+| `width` | integer | No | - | Custom width (if target_format="custom") |
+| `height` | integer | No | - | Custom height (if target_format="custom") |
+| `mode` | string | No | `extend` | Resize mode (extend uses AI outpainting) |
+| `background_prompt` | string | No | - | Prompt for AI-generated areas |
+
+#### Target Formats
+
+- `instagram_post` - 1080×1080 (1:1)
+- `instagram_story` - 1080×1920 (9:16)
+- `instagram_reel` - 1080×1920 (9:16)
+- `youtube_thumbnail` - 1280×720 (16:9)
+- `youtube_short` - 1080×1920 (9:16)
+- `twitter_post` - 1200×675 (16:9)
+- `linkedin_post` - 1200×627 (1.91:1)
+- `facebook_post` - 1200×630 (1.91:1)
+- `pinterest_pin` - 1000×1500 (2:3)
+- `tiktok` - 1080×1920 (9:16)
+- `custom` - Specify width/height manually
+
+#### Example Usage
+
+```json
+{
+  "tool": "resize_image",
+  "arguments": {
+    "image_url": "https://example.com/photo.jpg",
+    "target_format": "instagram_story",
+    "background_prompt": "continue the beach scenery"
+  }
+}
+```
+
+---
+
+### 🏷️ compose_images
+
+Overlay one image on another (e.g., add watermark, logo). Uses PIL for precise positioning.
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `base_image_url` | string | ✅ Yes | - | URL of the background image |
+| `overlay_image_url` | string | ✅ Yes | - | URL of the overlay image (logo, watermark) |
+| `position` | string | No | `bottom-right` | Position preset or "custom" |
+| `x` | integer | No | - | Custom X position (if position="custom") |
+| `y` | integer | No | - | Custom Y position (if position="custom") |
+| `scale` | number | No | 0.15 | Overlay size relative to base (0.01-1.0) |
+| `padding` | integer | No | 20 | Edge padding in pixels |
+| `opacity` | number | No | 1.0 | Overlay transparency (0-1) |
+| `output_format` | string | No | `png` | Output format (png, jpeg, webp) |
+
+#### Position Presets
+
+- `top-left`
+- `top-right`
+- `bottom-left`
+- `bottom-right` (default)
+- `center`
+- `custom` (requires x, y coordinates)
+
+#### Example Usage
+
+```json
+{
+  "tool": "compose_images",
+  "arguments": {
+    "base_image_url": "https://example.com/photo.jpg",
+    "overlay_image_url": "https://example.com/logo.png",
+    "position": "top-right",
+    "scale": 0.10,
+    "opacity": 0.8,
+    "padding": 30
+  }
 }
 ```
 
