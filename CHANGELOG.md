@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.17.0 (2025-12-23)
+
+### Features
+
+- Add image editing tools (remove_background, upscale, edit, inpaint, resize)
+  ([`ba11278`](https://github.com/raveenb/fal-mcp-server/commit/ba112787a76ba088a8383f5b52d32428910a09f0))
+
+
 ## v1.16.4 (2025-12-23)
 
 ### Bug Fixes
