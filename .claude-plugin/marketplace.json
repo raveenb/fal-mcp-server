@@ -1,0 +1,49 @@
+{
+  "name": "luminary-lane-tools",
+  "owner": {
+    "name": "Luminary Lane",
+    "email": "raveen@beemsingh.com"
+  },
+  "metadata": {
+    "description": "AI-powered creative tools for image, video, and audio generation",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "fal-ai",
+      "source": {
+        "source": "github",
+        "repo": "raveenb/fal-mcp-server"
+      },
+      "description": "Generate images, videos, and music using 600+ Fal.ai models. Supports Flux, SDXL, Kling Video, MusicGen, and more.",
+      "version": "1.14.0",
+      "author": {
+        "name": "Raveen Beemsingh",
+        "email": "raveen@beemsingh.com"
+      },
+      "homepage": "https://raveenb.github.io/fal-mcp-server/",
+      "repository": "https://github.com/raveenb/fal-mcp-server",
+      "license": "MIT",
+      "keywords": [
+        "fal",
+        "ai",
+        "image-generation",
+        "video-generation",
+        "music-generation",
+        "flux",
+        "sdxl",
+        "kling",
+        "stable-diffusion"
+      ],
+      "category": "media",
+      "tags": [
+        "image",
+        "video",
+        "audio",
+        "generation",
+        "creative",
+        "ai"
+      ]
+    }
+  ]
+}
