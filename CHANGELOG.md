@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.16.4 (2025-12-23)
+
+### Bug Fixes
+
+- Update deprecated svd alias to fast-svd-lcm
+  ([`4c4394c`](https://github.com/raveenb/fal-mcp-server/commit/4c4394c32b0707f437dad0399de3431088014b49))
+
+
 ## v1.16.3 (2025-12-23)
 
 ### Bug Fixes
