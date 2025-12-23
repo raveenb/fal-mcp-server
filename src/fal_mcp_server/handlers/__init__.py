@@ -8,6 +8,7 @@ use a QueueStrategy for long-running operations.
 
 from fal_mcp_server.handlers.audio_handlers import handle_generate_music
 from fal_mcp_server.handlers.image_editing_handlers import (
+    handle_compose_images,
     handle_edit_image,
     handle_inpaint_image,
     handle_remove_background,
@@ -49,6 +50,7 @@ __all__ = [
     "handle_edit_image",
     "handle_inpaint_image",
     "handle_resize_image",
+    "handle_compose_images",
     # Video handlers
     "handle_generate_video",
     "handle_generate_video_from_image",

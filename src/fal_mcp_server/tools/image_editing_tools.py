@@ -1,7 +1,7 @@
 """
 Image editing tool definitions for Fal.ai MCP Server.
 
-Contains: remove_background, upscale_image, edit_image, inpaint_image, resize_image
+Contains: remove_background, upscale_image, edit_image, inpaint_image, resize_image, compose_images
 """
 
 from typing import List
@@ -204,6 +204,71 @@ IMAGE_EDITING_TOOLS: List[Tool] = [
                 },
             },
             "required": ["image_url", "target_format"],
+        },
+    ),
+    Tool(
+        name="compose_images",
+        description="Overlay one image on top of another (e.g., add watermark, logo). Uses PIL for precise positioning - no AI needed.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "base_image_url": {
+                    "type": "string",
+                    "description": "URL of the background/base image",
+                },
+                "overlay_image_url": {
+                    "type": "string",
+                    "description": "URL of the image to overlay (e.g., logo, watermark). Use upload_file for local images.",
+                },
+                "position": {
+                    "type": "string",
+                    "enum": [
+                        "top-left",
+                        "top-right",
+                        "bottom-left",
+                        "bottom-right",
+                        "center",
+                        "custom",
+                    ],
+                    "default": "bottom-right",
+                    "description": "Where to place the overlay. Use 'custom' with x,y for exact positioning.",
+                },
+                "x": {
+                    "type": "integer",
+                    "description": "Custom X position in pixels (required if position='custom')",
+                },
+                "y": {
+                    "type": "integer",
+                    "description": "Custom Y position in pixels (required if position='custom')",
+                },
+                "scale": {
+                    "type": "number",
+                    "default": 0.15,
+                    "minimum": 0.01,
+                    "maximum": 1.0,
+                    "description": "Scale overlay relative to base image width (0.01-1.0). Default 0.15 = 15% of base width.",
+                },
+                "padding": {
+                    "type": "integer",
+                    "default": 20,
+                    "minimum": 0,
+                    "description": "Padding from edges in pixels (for preset positions)",
+                },
+                "opacity": {
+                    "type": "number",
+                    "default": 1.0,
+                    "minimum": 0.0,
+                    "maximum": 1.0,
+                    "description": "Overlay opacity (0.0=transparent, 1.0=opaque)",
+                },
+                "output_format": {
+                    "type": "string",
+                    "enum": ["png", "jpeg", "webp"],
+                    "default": "png",
+                    "description": "Output image format",
+                },
+            },
+            "required": ["base_image_url", "overlay_image_url"],
         },
     ),
 ]

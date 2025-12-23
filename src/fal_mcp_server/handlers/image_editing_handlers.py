@@ -1,14 +1,21 @@
 """
 Image editing handler implementations for Fal.ai MCP Server.
 
-Contains: remove_background, upscale_image, edit_image, inpaint_image, resize_image
+Contains: remove_background, upscale_image, edit_image, inpaint_image, resize_image, compose_images
 """
 
 import asyncio
-from typing import Any, Dict, List
+import os
+import tempfile
+from io import BytesIO
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
+import fal_client
+import httpx
 from loguru import logger
 from mcp.types import TextContent
+from PIL import Image
 
 from fal_mcp_server.model_registry import ModelRegistry
 from fal_mcp_server.queue.base import QueueStrategy
@@ -583,3 +590,168 @@ async def _resize_with_letterbox(
             f"Coming soon: Letterbox resizing with custom background colors.",
         )
     ]
+
+
+async def handle_compose_images(
+    arguments: Dict[str, Any],
+    registry: ModelRegistry,
+    queue_strategy: QueueStrategy,
+) -> List[TextContent]:
+    """
+    Handle the compose_images tool for overlaying images.
+
+    Uses PIL for compositing and uploads result to Fal storage.
+    """
+    base_url = arguments["base_image_url"]
+    overlay_url = arguments["overlay_image_url"]
+    position = arguments.get("position", "bottom-right")
+    scale = arguments.get("scale", 0.15)
+    padding = arguments.get("padding", 20)
+    opacity = arguments.get("opacity", 1.0)
+    output_format = arguments.get("output_format", "png")
+
+    # Validate custom position BEFORE any processing
+    if position == "custom":
+        if arguments.get("x") is None or arguments.get("y") is None:
+            return [
+                TextContent(
+                    type="text",
+                    text="❌ Custom position requires both 'x' and 'y' parameters.",
+                )
+            ]
+
+    logger.info(
+        "Composing images: overlay at %s with scale=%.2f, opacity=%.2f",
+        position,
+        scale,
+        opacity,
+    )
+
+    tmp_path: str | None = None
+    try:
+        # Download both images with timeout
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            base_response = await client.get(base_url)
+            base_response.raise_for_status()
+            overlay_response = await client.get(overlay_url)
+            overlay_response.raise_for_status()
+
+        # Open images with PIL
+        base_img = Image.open(BytesIO(base_response.content)).convert("RGBA")
+        overlay_img = Image.open(BytesIO(overlay_response.content)).convert("RGBA")
+
+        # Scale overlay relative to base width
+        overlay_width = int(base_img.width * scale)
+        overlay_ratio = overlay_width / overlay_img.width
+        overlay_height = int(overlay_img.height * overlay_ratio)
+        overlay_img = overlay_img.resize(
+            (overlay_width, overlay_height), Image.Resampling.LANCZOS
+        )
+
+        # Calculate position
+        x, y = _calculate_overlay_position(
+            base_img.size,
+            (overlay_width, overlay_height),
+            position,
+            padding,
+            arguments.get("x"),
+            arguments.get("y"),
+        )
+
+        # Apply opacity if not fully opaque
+        if opacity < 1.0:
+            overlay_img = _apply_opacity(overlay_img, opacity)
+
+        # Composite the images
+        # Create a copy to avoid modifying the original
+        result_img = base_img.copy()
+        result_img.paste(overlay_img, (x, y), overlay_img)
+
+        # Convert to RGB if saving as JPEG
+        if output_format.lower() == "jpeg":
+            result_img = result_img.convert("RGB")
+
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(
+            suffix=f".{output_format}", delete=False
+        ) as tmp:
+            result_img.save(tmp.name, format=output_format.upper())
+            tmp_path = tmp.name
+
+        # Upload to Fal storage
+        logger.info("Uploading composed image to Fal storage")
+        result_url = await fal_client.upload_file_async(Path(tmp_path))
+
+        response = "🖼️ Images composed successfully!\n\n"
+        response += f"**Position**: {position}"
+        if position == "custom":
+            response += f" ({x}, {y})"
+        response += "\n"
+        response += f"**Overlay scale**: {scale:.0%} of base width\n"
+        if opacity < 1.0:
+            response += f"**Opacity**: {opacity:.0%}\n"
+        response += f"\n**Result**: {result_url}"
+
+        return [TextContent(type="text", text=response)]
+
+    except httpx.HTTPError as e:
+        logger.exception("Failed to download images: %s", e)
+        return [
+            TextContent(
+                type="text",
+                text=f"❌ Failed to download images: {e}",
+            )
+        ]
+    except Exception as e:
+        logger.exception("Image composition failed: %s", e)
+        return [
+            TextContent(
+                type="text",
+                text=f"❌ Image composition failed: {e}",
+            )
+        ]
+    finally:
+        # Always clean up temp file
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError as cleanup_error:
+                logger.warning(
+                    "Failed to clean up temp file %s: %s", tmp_path, cleanup_error
+                )
+
+
+def _calculate_overlay_position(
+    base_size: Tuple[int, int],
+    overlay_size: Tuple[int, int],
+    position: str,
+    padding: int,
+    custom_x: int | None,
+    custom_y: int | None,
+) -> Tuple[int, int]:
+    """Calculate the x, y position for the overlay based on position preset."""
+    base_w, base_h = base_size
+    overlay_w, overlay_h = overlay_size
+
+    positions = {
+        "top-left": (padding, padding),
+        "top-right": (base_w - overlay_w - padding, padding),
+        "bottom-left": (padding, base_h - overlay_h - padding),
+        "bottom-right": (base_w - overlay_w - padding, base_h - overlay_h - padding),
+        "center": ((base_w - overlay_w) // 2, (base_h - overlay_h) // 2),
+        "custom": (custom_x or 0, custom_y or 0),
+    }
+
+    return positions.get(position, positions["bottom-right"])
+
+
+def _apply_opacity(image: Image.Image, opacity: float) -> Image.Image:
+    """Apply opacity to an RGBA image."""
+    # Split into channels
+    r, g, b, a = image.split()
+
+    # Apply opacity to alpha channel
+    a = a.point(lambda x: int(x * opacity))
+
+    # Merge back
+    return Image.merge("RGBA", (r, g, b, a))

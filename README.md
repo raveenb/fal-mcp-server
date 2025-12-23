@@ -27,17 +27,25 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 - **HTTP/SSE** - Web-based access via Server-Sent Events
 - **Dual Mode** - Run both transports simultaneously
 
-### 🎨 Media Generation (12 Tools)
+### 🎨 Media Generation (18 Tools)
 
-**Image Tools:**
+**Image Generation:**
 - 🖼️ **generate_image** - Create images from text prompts (Flux, SDXL, etc.)
 - 🎯 **generate_image_structured** - Fine-grained control over composition, lighting, subjects
 - 🔄 **generate_image_from_image** - Transform existing images with style transfer
 
+**Image Editing:**
+- ✂️ **remove_background** - Remove backgrounds from images (transparent PNG)
+- 🔍 **upscale_image** - Upscale images 2x or 4x while preserving quality
+- ✏️ **edit_image** - Edit images using natural language instructions
+- 🎭 **inpaint_image** - Edit specific regions using masks
+- 📐 **resize_image** - Smart resize for social media (Instagram, YouTube, TikTok, etc.)
+- 🏷️ **compose_images** - Overlay images (watermarks, logos) with precise positioning
+
 **Video Tools:**
 - 🎬 **generate_video** - Text-to-video and image-to-video generation
 - 📹 **generate_video_from_image** - Animate images into videos
-- 🔀 **generate_video_from_video** - Video restyling and motion transfer (NEW!)
+- 🔀 **generate_video_from_video** - Video restyling and motion transfer
 
 **Audio Tools:**
 - 🎵 **generate_music** - Create instrumental music or songs with vocals

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for image editing tools (remove_background, upscale, edit, inpaint, resize)."""
+"""Tests for image editing tools (remove_background, upscale, edit, inpaint, resize, compose)."""
 
 import sys
 
@@ -16,12 +16,13 @@ async def test_image_editing_tools_registered():
     tools = await list_tools()
     tool_names = [t.name for t in tools]
 
-    # All 5 image editing tools should be registered
+    # All 6 image editing tools should be registered
     assert "remove_background" in tool_names
     assert "upscale_image" in tool_names
     assert "edit_image" in tool_names
     assert "inpaint_image" in tool_names
     assert "resize_image" in tool_names
+    assert "compose_images" in tool_names
 
 
 @pytest.mark.asyncio
@@ -215,6 +216,75 @@ async def test_resize_image_tool_schema():
 
 
 @pytest.mark.asyncio
+async def test_compose_images_tool_schema():
+    """Test that compose_images tool has correct schema for image compositing."""
+    from fal_mcp_server.server import list_tools
+
+    tools = await list_tools()
+    tool = next(t for t in tools if t.name == "compose_images")
+
+    assert tool is not None
+    props = tool.inputSchema["properties"]
+
+    # Check required parameters
+    assert "base_image_url" in props
+    assert props["base_image_url"]["type"] == "string"
+
+    assert "overlay_image_url" in props
+    assert props["overlay_image_url"]["type"] == "string"
+
+    # Check position presets
+    assert "position" in props
+    assert props["position"]["type"] == "string"
+    assert props["position"]["default"] == "bottom-right"
+    position_enum = props["position"]["enum"]
+    assert "top-left" in position_enum
+    assert "top-right" in position_enum
+    assert "bottom-left" in position_enum
+    assert "bottom-right" in position_enum
+    assert "center" in position_enum
+    assert "custom" in position_enum
+
+    # Check custom position parameters
+    assert "x" in props
+    assert props["x"]["type"] == "integer"
+
+    assert "y" in props
+    assert props["y"]["type"] == "integer"
+
+    # Check scale parameter
+    assert "scale" in props
+    assert props["scale"]["type"] == "number"
+    assert props["scale"]["default"] == 0.15
+    assert props["scale"]["minimum"] == 0.01
+    assert props["scale"]["maximum"] == 1.0
+
+    # Check padding parameter
+    assert "padding" in props
+    assert props["padding"]["type"] == "integer"
+    assert props["padding"]["default"] == 20
+    assert props["padding"]["minimum"] == 0
+
+    # Check opacity parameter
+    assert "opacity" in props
+    assert props["opacity"]["type"] == "number"
+    assert props["opacity"]["default"] == 1.0
+    assert props["opacity"]["minimum"] == 0.0
+    assert props["opacity"]["maximum"] == 1.0
+
+    # Check output format
+    assert "output_format" in props
+    assert props["output_format"]["default"] == "png"
+    assert "png" in props["output_format"]["enum"]
+    assert "jpeg" in props["output_format"]["enum"]
+    assert "webp" in props["output_format"]["enum"]
+
+    # base_image_url and overlay_image_url are required
+    assert "base_image_url" in tool.inputSchema["required"]
+    assert "overlay_image_url" in tool.inputSchema["required"]
+
+
+@pytest.mark.asyncio
 async def test_social_media_formats_constant():
     """Test that SOCIAL_MEDIA_FORMATS constant has correct dimensions."""
     from fal_mcp_server.tools.image_editing_tools import SOCIAL_MEDIA_FORMATS
@@ -251,19 +321,20 @@ async def test_image_editing_handlers_registered():
     """Test that all image editing handlers are registered in TOOL_HANDLERS."""
     from fal_mcp_server.server import TOOL_HANDLERS
 
-    # All 5 image editing handlers should be registered
+    # All 6 image editing handlers should be registered
     assert "remove_background" in TOOL_HANDLERS
     assert "upscale_image" in TOOL_HANDLERS
     assert "edit_image" in TOOL_HANDLERS
     assert "inpaint_image" in TOOL_HANDLERS
     assert "resize_image" in TOOL_HANDLERS
+    assert "compose_images" in TOOL_HANDLERS
 
 
 def test_image_editing_tools_count():
-    """Test that IMAGE_EDITING_TOOLS contains exactly 5 tools."""
+    """Test that IMAGE_EDITING_TOOLS contains exactly 6 tools."""
     from fal_mcp_server.tools.image_editing_tools import IMAGE_EDITING_TOOLS
 
-    assert len(IMAGE_EDITING_TOOLS) == 5
+    assert len(IMAGE_EDITING_TOOLS) == 6
 
     tool_names = [t.name for t in IMAGE_EDITING_TOOLS]
     assert "remove_background" in tool_names
@@ -271,11 +342,13 @@ def test_image_editing_tools_count():
     assert "edit_image" in tool_names
     assert "inpaint_image" in tool_names
     assert "resize_image" in tool_names
+    assert "compose_images" in tool_names
 
 
 def test_handlers_import():
     """Test that all image editing handlers can be imported."""
     from fal_mcp_server.handlers.image_editing_handlers import (
+        handle_compose_images,
         handle_edit_image,
         handle_inpaint_image,
         handle_remove_background,
@@ -289,3 +362,4 @@ def test_handlers_import():
     assert callable(handle_edit_image)
     assert callable(handle_inpaint_image)
     assert callable(handle_resize_image)
+    assert callable(handle_compose_images)
