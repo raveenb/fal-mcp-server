@@ -85,7 +85,7 @@ class ModelRegistry:
         "sdxl": "fal-ai/fast-sdxl",
         "stable_diffusion": "fal-ai/stable-diffusion-v3-medium",
         # Video models
-        "svd": "fal-ai/stable-video-diffusion",
+        "svd": "fal-ai/fast-svd-lcm",  # Updated: stable-video-diffusion deprecated
         "animatediff": "fal-ai/fast-animatediff",
         "kling": "fal-ai/kling-video",
         # Audio models
