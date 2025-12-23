@@ -1,0 +1,40 @@
+{
+  "name": "fal-ai",
+  "description": "Generate images, videos, and music using 600+ Fal.ai models. Supports Flux, SDXL, Kling Video, and more.",
+  "version": "1.14.0",
+  "author": {
+    "name": "Raveen Beemsingh",
+    "email": "raveen@beemsingh.com"
+  },
+  "homepage": "https://raveenb.github.io/fal-mcp-server/",
+  "repository": "https://github.com/raveenb/fal-mcp-server",
+  "license": "MIT",
+  "keywords": [
+    "fal",
+    "ai",
+    "image-generation",
+    "video-generation",
+    "music-generation",
+    "flux",
+    "sdxl",
+    "kling",
+    "stable-diffusion"
+  ],
+  "category": "media",
+  "tags": [
+    "image",
+    "video",
+    "audio",
+    "generation",
+    "creative"
+  ],
+  "mcpServers": {
+    "fal-ai": {
+      "command": "uvx",
+      "args": ["--from", "fal-mcp-server", "fal-mcp"],
+      "env": {
+        "FAL_KEY": "${FAL_KEY}"
+      }
+    }
+  }
+}
