@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v1.15.0 (2025-12-23)
+
+### Chores
+
+- **deps**: Bump actions/checkout from 4 to 6
+  ([#92](https://github.com/raveenb/fal-mcp-server/pull/92),
+  [`4215eb3`](https://github.com/raveenb/fal-mcp-server/commit/4215eb3a5273ab7be214b4a1a002bf5428841827))
+
+- **deps**: Bump actions/setup-python from 4 to 6
+  ([#91](https://github.com/raveenb/fal-mcp-server/pull/91),
+  [`ff7db94`](https://github.com/raveenb/fal-mcp-server/commit/ff7db9432c7cf22ff4b2dc3142f2b09342aa4f50))
+
+### Documentation
+
+- Add troubleshooting section and update tools list
+  ([`2de3fcc`](https://github.com/raveenb/fal-mcp-server/commit/2de3fcc98d0129ac2591ba4caa9d41c992238766))
+
+### Features
+
+- Add Claude Code plugin manifest
+  ([`95a333a`](https://github.com/raveenb/fal-mcp-server/commit/95a333a591d891ca24a52aa3a82e58088fada870))
+
+
 ## v1.14.0 (2025-12-22)
 
 ### Bug Fixes
