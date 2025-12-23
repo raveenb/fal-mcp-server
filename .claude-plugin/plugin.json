@@ -20,14 +20,6 @@
     "kling",
     "stable-diffusion"
   ],
-  "category": "media",
-  "tags": [
-    "image",
-    "video",
-    "audio",
-    "generation",
-    "creative"
-  ],
   "mcpServers": {
     "fal-ai": {
       "command": "uvx",
