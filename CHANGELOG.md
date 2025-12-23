@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.16.0 (2025-12-23)
+
+### Features
+
+- Add Luminary Lane Tools marketplace
+  ([`1747fff`](https://github.com/raveenb/fal-mcp-server/commit/1747fff1546b92c760277b1568d6a4bbe227eb34))
+
+
 ## v1.15.0 (2025-12-23)
 
 ### Chores
