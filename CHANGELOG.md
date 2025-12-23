@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.16.1 (2025-12-23)
+
+### Bug Fixes
+
+- Move plugin.json to correct location
+  ([`9db5a75`](https://github.com/raveenb/fal-mcp-server/commit/9db5a75cb443f7eb65a7e5470306691d08e73066))
+
+
 ## v1.16.0 (2025-12-23)
 
 ### Features
