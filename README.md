@@ -65,6 +65,25 @@ A Model Context Protocol (MCP) server that enables Claude Desktop (and other MCP
 
 ### Installation
 
+#### Option 0: Claude Code Plugin (Simplest for Claude Code Users) 🔌
+
+If you're using [Claude Code](https://claude.ai/code), install directly via the plugin system:
+
+```bash
+# Add the Luminary Lane Tools marketplace
+/plugin marketplace add raveenb/fal-mcp-server
+
+# Install the fal-ai plugin
+/plugin install fal-ai@luminary-lane-tools
+```
+
+Or install directly without adding the marketplace:
+```bash
+/plugin install fal-ai@raveenb/fal-mcp-server
+```
+
+> **Note:** You'll need to set `FAL_KEY` in your environment before using the plugin.
+
 #### Option 1: uvx (Recommended - Zero Install) ⚡
 
 Run directly without installation using [uv](https://docs.astral.sh/uv/):
@@ -339,6 +358,22 @@ Use `list_models` with category filters to discover more:
 | [Local Testing](docs/LOCAL_TESTING.md) | Running CI locally with `act` |
 
 📖 **Full documentation site**: [raveenb.github.io/fal-mcp-server](https://raveenb.github.io/fal-mcp-server/)
+
+### 🔌 Claude Code Plugin Marketplace
+
+This project is part of the **Luminary Lane Tools** marketplace for Claude Code plugins.
+
+**Add the marketplace:**
+```bash
+/plugin marketplace add raveenb/fal-mcp-server
+```
+
+**Available plugins:**
+| Plugin | Description |
+|--------|-------------|
+| `fal-ai` | Generate images, videos, and music using 600+ Fal.ai models |
+
+*More plugins coming soon!*
 
 ## 🔧 Troubleshooting
 
