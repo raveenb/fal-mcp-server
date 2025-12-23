@@ -71,17 +71,27 @@ async def test_list_tools():
     tools = await list_tools()
 
     tool_names = [t.name for t in tools]
+    # Utility tools
     assert "list_models" in tool_names
     assert "recommend_model" in tool_names
     assert "get_pricing" in tool_names
     assert "get_usage" in tool_names
+    assert "upload_file" in tool_names
+    # Image generation tools
     assert "generate_image" in tool_names
     assert "generate_image_structured" in tool_names
     assert "generate_image_from_image" in tool_names
+    # Image editing tools
+    assert "remove_background" in tool_names
+    assert "upscale_image" in tool_names
+    assert "edit_image" in tool_names
+    assert "inpaint_image" in tool_names
+    assert "resize_image" in tool_names
+    # Video tools
     assert "generate_video" in tool_names
     assert "generate_video_from_image" in tool_names
+    # Audio tools
     assert "generate_music" in tool_names
-    assert "upload_file" in tool_names
 
 
 @pytest.mark.asyncio

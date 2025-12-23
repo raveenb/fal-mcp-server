@@ -18,6 +18,7 @@ from mcp.types import ServerCapabilities, TextContent, Tool, ToolsCapability
 
 # Handlers (transport-agnostic business logic)
 from fal_mcp_server.handlers import (
+    handle_edit_image,
     handle_generate_image,
     handle_generate_image_from_image,
     handle_generate_image_structured,
@@ -27,8 +28,12 @@ from fal_mcp_server.handlers import (
     handle_generate_video_from_video,
     handle_get_pricing,
     handle_get_usage,
+    handle_inpaint_image,
     handle_list_models,
     handle_recommend_model,
+    handle_remove_background,
+    handle_resize_image,
+    handle_upscale_image,
     handle_upload_file,
 )
 
@@ -59,10 +64,16 @@ TOOL_HANDLERS = {
     "get_pricing": handle_get_pricing,
     "get_usage": handle_get_usage,
     "upload_file": handle_upload_file,
-    # Image tools
+    # Image generation tools
     "generate_image": handle_generate_image,
     "generate_image_structured": handle_generate_image_structured,
     "generate_image_from_image": handle_generate_image_from_image,
+    # Image editing tools
+    "remove_background": handle_remove_background,
+    "upscale_image": handle_upscale_image,
+    "edit_image": handle_edit_image,
+    "inpaint_image": handle_inpaint_image,
+    "resize_image": handle_resize_image,
     # Video tools
     "generate_video": handle_generate_video,
     "generate_video_from_image": handle_generate_video_from_image,
