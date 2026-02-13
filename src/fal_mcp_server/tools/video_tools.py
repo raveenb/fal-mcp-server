@@ -1,7 +1,8 @@
 """
 Video tool definitions for Fal.ai MCP Server.
 
-Contains: generate_video, generate_video_from_image, generate_video_from_video
+Contains: generate_video, generate_video_from_image, generate_video_from_video,
+          submit_video, check_video_status
 """
 
 from typing import List
@@ -174,6 +175,68 @@ VIDEO_TOOLS: List[Tool] = [
                 },
             },
             "required": ["video_url", "prompt"],
+        },
+    ),
+    Tool(
+        name="submit_video",
+        description="Submit a video generation job and return immediately with a request ID. Unlike generate_video, this does NOT wait for the result — use check_video_status to poll. Ideal for long-running models (e.g. Kling Pro, high-duration videos) that may exceed timeout limits.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "Text description for the video",
+                },
+                "image_url": {
+                    "type": "string",
+                    "description": "Starting image URL for image-to-video models. Optional for text-to-video models.",
+                },
+                "model": {
+                    "type": "string",
+                    "default": "fal-ai/wan-i2v",
+                    "description": "Model ID (e.g. 'fal-ai/kling-video/v3/pro/text-to-video'). Use list_models to discover available models.",
+                },
+                "duration": {
+                    "type": "integer",
+                    "default": 5,
+                    "minimum": 2,
+                    "maximum": 10,
+                    "description": "Video duration in seconds",
+                },
+                "aspect_ratio": {
+                    "type": "string",
+                    "default": "16:9",
+                    "description": "Video aspect ratio (e.g., '16:9', '9:16', '1:1')",
+                },
+                "negative_prompt": {
+                    "type": "string",
+                    "description": "What to avoid in the video (e.g., 'blur, distort, low quality')",
+                },
+                "cfg_scale": {
+                    "type": "number",
+                    "default": 0.5,
+                    "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
+                },
+            },
+            "required": ["prompt"],
+        },
+    ),
+    Tool(
+        name="check_video_status",
+        description="Check the status of a video job submitted via submit_video. Returns queue position if waiting, progress if running, or the video URL if complete.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "request_id": {
+                    "type": "string",
+                    "description": "The request_id returned by submit_video",
+                },
+                "model": {
+                    "type": "string",
+                    "description": "The model ID used when submitting (returned by submit_video)",
+                },
+            },
+            "required": ["request_id", "model"],
         },
     ),
 ]

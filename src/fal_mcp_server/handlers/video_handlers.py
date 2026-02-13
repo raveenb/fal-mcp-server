@@ -1,12 +1,14 @@
 """
 Video handler implementations for Fal.ai MCP Server.
 
-Contains: generate_video, generate_video_from_image, generate_video_from_video
+Contains: generate_video, generate_video_from_image, generate_video_from_video,
+          submit_video, check_video_status
 """
 
 import asyncio
 from typing import Any, Dict, List
 
+import fal_client
 from loguru import logger
 from mcp.types import TextContent
 
@@ -374,5 +376,160 @@ async def handle_generate_video_from_video(
         TextContent(
             type="text",
             text="❌ Video transformation completed but no video URL was returned. Please try again.",
+        )
+    ]
+
+
+async def handle_submit_video(
+    arguments: Dict[str, Any],
+    registry: ModelRegistry,
+) -> List[TextContent]:
+    """Submit a video generation job and return immediately with a request ID.
+
+    Use check_video_status to poll for the result. This is useful for
+    long-running models (e.g. Kling Pro) that exceed the default timeout.
+    """
+    model_input = arguments.get("model", "fal-ai/wan-i2v")
+    try:
+        model_id = await registry.resolve_model_id(model_input)
+    except ValueError as e:
+        return [
+            TextContent(
+                type="text",
+                text=f"❌ {e}. Use list_models to see available options.",
+            )
+        ]
+
+    fal_args: Dict[str, Any] = {
+        "prompt": arguments["prompt"],
+    }
+    if "image_url" in arguments:
+        fal_args["image_url"] = arguments["image_url"]
+    if "duration" in arguments:
+        fal_args["duration"] = arguments["duration"]
+    if "aspect_ratio" in arguments:
+        fal_args["aspect_ratio"] = arguments["aspect_ratio"]
+    if "negative_prompt" in arguments:
+        fal_args["negative_prompt"] = arguments["negative_prompt"]
+    if "cfg_scale" in arguments:
+        fal_args["cfg_scale"] = arguments["cfg_scale"]
+
+    logger.info("Submitting async video generation with %s", model_id)
+    try:
+        handle = await fal_client.submit_async(model_id, arguments=fal_args)
+    except Exception as e:
+        logger.exception("Failed to submit video job to %s", model_id)
+        return [
+            TextContent(
+                type="text",
+                text=f"❌ Failed to submit video job: {e}",
+            )
+        ]
+
+    return [
+        TextContent(
+            type="text",
+            text=(
+                f"✅ Video job submitted to {model_id}\n\n"
+                f"**request_id**: `{handle.request_id}`\n"
+                f"**model**: `{model_id}`\n\n"
+                f"Use `check_video_status` with the request_id and model above to check progress and retrieve the result."
+            ),
+        )
+    ]
+
+
+async def handle_check_video_status(
+    arguments: Dict[str, Any],
+    registry: ModelRegistry,
+) -> List[TextContent]:
+    """Check the status of a submitted video job and return the result if complete."""
+    request_id = arguments["request_id"]
+    model_id = arguments["model"]
+
+    logger.info("Checking video status for %s on %s", request_id, model_id)
+    try:
+        status = await fal_client.status_async(
+            model_id, request_id, with_logs=True
+        )
+    except Exception as e:
+        logger.exception(
+            "Failed to check status for %s on %s", request_id, model_id
+        )
+        return [
+            TextContent(
+                type="text",
+                text=f"❌ Failed to check status: {e}",
+            )
+        ]
+
+    if isinstance(status, fal_client.Queued):
+        return [
+            TextContent(
+                type="text",
+                text=f"⏳ Queued — position {status.position}. Call check_video_status again later.",
+            )
+        ]
+
+    if isinstance(status, fal_client.InProgress):
+        log_lines = ""
+        if status.logs:
+            log_lines = "\n".join(
+                entry.get("message", "") for entry in status.logs[-5:]
+            )
+        return [
+            TextContent(
+                type="text",
+                text=f"🔄 In progress…{chr(10) + log_lines if log_lines else ''}\n\nCall check_video_status again later.",
+            )
+        ]
+
+    if isinstance(status, fal_client.Completed):
+        # Fetch the actual result
+        try:
+            result = await fal_client.result_async(model_id, request_id)
+            video_result = dict(result) if result else {}
+        except Exception as e:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"❌ Job completed but failed to fetch result: {e}",
+                )
+            ]
+
+        if "error" in video_result:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"❌ Video generation failed: {video_result['error']}",
+                )
+            ]
+
+        video_dict = video_result.get("video", {})
+        if isinstance(video_dict, dict):
+            video_url = video_dict.get("url")
+        else:
+            video_url = video_result.get("url")
+
+        if video_url:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"🎬 Video ready: {video_url}",
+                )
+            ]
+
+        return [
+            TextContent(
+                type="text",
+                text="❌ Job completed but no video URL in response.",
+            )
+        ]
+
+    # Unknown status
+    return [
+        TextContent(
+            type="text",
+            text=f"❓ Unknown status: {status}",
         )
     ]

@@ -18,6 +18,7 @@ from mcp.types import ServerCapabilities, TextContent, Tool, ToolsCapability
 
 # Handlers (transport-agnostic business logic)
 from fal_mcp_server.handlers import (
+    handle_check_video_status,
     handle_compose_images,
     handle_edit_image,
     handle_generate_image,
@@ -34,6 +35,7 @@ from fal_mcp_server.handlers import (
     handle_recommend_model,
     handle_remove_background,
     handle_resize_image,
+    handle_submit_video,
     handle_upload_file,
     handle_upscale_image,
 )
@@ -80,6 +82,8 @@ TOOL_HANDLERS = {
     "generate_video": handle_generate_video,
     "generate_video_from_image": handle_generate_video_from_image,
     "generate_video_from_video": handle_generate_video_from_video,
+    "submit_video": handle_submit_video,
+    "check_video_status": handle_check_video_status,
     # Audio tools
     "generate_music": handle_generate_music,
 }
@@ -91,6 +95,8 @@ NO_QUEUE_TOOLS = {
     "get_pricing",
     "get_usage",
     "upload_file",
+    "submit_video",
+    "check_video_status",
 }
 
 
