@@ -238,6 +238,10 @@ VIDEO_TOOLS: List[Tool] = [
                     "default": 0.5,
                     "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
                 },
+                "extra_params": {
+                    "type": "object",
+                    "description": "Model-specific parameters passed directly to the fal.ai API (e.g. {\"generate_audio\": true, \"shot_type\": \"customize\", \"voice_ids\": [\"id1\"]} for Kling v3).",
+                },
             },
             "oneOf": [
                 {"required": ["prompt"]},

@@ -419,6 +419,10 @@ async def handle_submit_video(
     if "cfg_scale" in arguments:
         fal_args["cfg_scale"] = arguments["cfg_scale"]
 
+    # Pass through any model-specific parameters
+    if "extra_params" in arguments:
+        fal_args.update(arguments["extra_params"])
+
     logger.info("Submitting async video generation with %s", model_id)
     try:
         handle = await fal_client.submit_async(model_id, arguments=fal_args)
