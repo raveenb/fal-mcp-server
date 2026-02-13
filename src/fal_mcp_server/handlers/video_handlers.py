@@ -400,14 +400,9 @@ async def handle_submit_video(
             )
         ]
 
-    fal_args: Dict[str, Any] = {}
-
-    # multi_prompt overrides single prompt (for multi-shot models like Kling v3)
-    if "multi_prompt" in arguments:
-        fal_args["multi_prompt"] = arguments["multi_prompt"]
-    else:
-        fal_args["prompt"] = arguments["prompt"]
-
+    fal_args: Dict[str, Any] = {
+        "prompt": arguments["prompt"],
+    }
     if "image_url" in arguments:
         fal_args["image_url"] = arguments["image_url"]
     if "duration" in arguments:

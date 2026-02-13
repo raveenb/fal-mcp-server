@@ -185,28 +185,7 @@ VIDEO_TOOLS: List[Tool] = [
             "properties": {
                 "prompt": {
                     "type": "string",
-                    "description": "Text description for the video. Use this OR multi_prompt, not both.",
-                },
-                "multi_prompt": {
-                    "type": "array",
-                    "description": "Multi-shot prompts for models that support it (e.g. Kling v3). Each item is a shot with its own prompt and duration. Overrides the single prompt field.",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "prompt": {
-                                "type": "string",
-                                "description": "The prompt for this shot",
-                            },
-                            "duration": {
-                                "type": "integer",
-                                "minimum": 3,
-                                "maximum": 15,
-                                "default": 5,
-                                "description": "Duration of this shot in seconds (3-15)",
-                            },
-                        },
-                        "required": ["prompt"],
-                    },
+                    "description": "Text description for the video",
                 },
                 "image_url": {
                     "type": "string",
@@ -243,10 +222,7 @@ VIDEO_TOOLS: List[Tool] = [
                     "description": "Model-specific parameters passed directly to the fal.ai API (e.g. {\"generate_audio\": true, \"shot_type\": \"customize\", \"voice_ids\": [\"id1\"]} for Kling v3).",
                 },
             },
-            "oneOf": [
-                {"required": ["prompt"]},
-                {"required": ["multi_prompt"]},
-            ],
+            "required": ["prompt"],
         },
     ),
     Tool(
