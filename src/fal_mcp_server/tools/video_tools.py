@@ -179,13 +179,34 @@ VIDEO_TOOLS: List[Tool] = [
     ),
     Tool(
         name="submit_video",
-        description="Submit a video generation job and return immediately with a request ID. Unlike generate_video, this does NOT wait for the result — use check_video_status to poll. Ideal for long-running models (e.g. Kling Pro, high-duration videos) that may exceed timeout limits.",
+        description="Submit a video generation job and return immediately with a request ID. Unlike generate_video, this does NOT wait for the result — use check_video_status to poll. Ideal for long-running models (e.g. Kling Pro, high-duration videos) that may exceed timeout limits. Supports multi-shot via multi_prompt.",
         inputSchema={
             "type": "object",
             "properties": {
                 "prompt": {
                     "type": "string",
-                    "description": "Text description for the video",
+                    "description": "Text description for the video. Use this OR multi_prompt, not both.",
+                },
+                "multi_prompt": {
+                    "type": "array",
+                    "description": "Multi-shot prompts for models that support it (e.g. Kling v3). Each item is a shot with its own prompt and duration. Overrides the single prompt field.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "prompt": {
+                                "type": "string",
+                                "description": "The prompt for this shot",
+                            },
+                            "duration": {
+                                "type": "integer",
+                                "minimum": 3,
+                                "maximum": 15,
+                                "default": 5,
+                                "description": "Duration of this shot in seconds (3-15)",
+                            },
+                        },
+                        "required": ["prompt"],
+                    },
                 },
                 "image_url": {
                     "type": "string",
@@ -201,7 +222,7 @@ VIDEO_TOOLS: List[Tool] = [
                     "default": 5,
                     "minimum": 2,
                     "maximum": 10,
-                    "description": "Video duration in seconds",
+                    "description": "Overall video duration in seconds (ignored when multi_prompt is used)",
                 },
                 "aspect_ratio": {
                     "type": "string",
@@ -218,7 +239,10 @@ VIDEO_TOOLS: List[Tool] = [
                     "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
                 },
             },
-            "required": ["prompt"],
+            "oneOf": [
+                {"required": ["prompt"]},
+                {"required": ["multi_prompt"]},
+            ],
         },
     ),
     Tool(
