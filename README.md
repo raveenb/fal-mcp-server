@@ -482,3 +482,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - [Fal.ai](https://fal.ai) for providing the AI models
 - [Anthropic](https://anthropic.com) for the MCP specification
+
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/raveenb-fal-mcp-server).
+
