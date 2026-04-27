@@ -55,7 +55,7 @@ VIDEO_TOOLS: List[Tool] = [
     ),
     Tool(
         name="generate_video_from_image",
-        description="Animate an image into a video. The image serves as the starting frame and the prompt guides the animation. Use upload_file first if you have a local image.",
+        description="Animate an image into a video. The image serves as the starting frame and the prompt guides the animation. Optionally provide tail_image_url to interpolate to an end frame (Kling first-last-frame transition models). Use upload_file first if you have a local image.",
         inputSchema={
             "type": "object",
             "properties": {
@@ -70,7 +70,7 @@ VIDEO_TOOLS: List[Tool] = [
                 "model": {
                     "type": "string",
                     "default": "fal-ai/wan-i2v",
-                    "description": "Image-to-video model. Options: fal-ai/wan-i2v, fal-ai/kling-video/v2.1/standard/image-to-video",
+                    "description": "Image-to-video model. Options: fal-ai/wan-i2v, fal-ai/kling-video/v2.1/standard/image-to-video. For first-last-frame transitions, use a Kling model that supports it (e.g., fal-ai/kling-video/v3/4k/image-to-video, fal-ai/kling-video/o3/standard/image-to-video) and pass tail_image_url.",
                 },
                 "duration": {
                     "type": "integer",
@@ -92,6 +92,10 @@ VIDEO_TOOLS: List[Tool] = [
                     "type": "number",
                     "default": 0.5,
                     "description": "Classifier-free guidance scale (0.0-1.0). Lower values give more creative results.",
+                },
+                "tail_image_url": {
+                    "type": "string",
+                    "description": "[Kling first-last-frame] URL of the image for the END frame. When set with a compatible Kling model (v3/4k, o3, v1.6 pro, v2.x pro), generates a smooth transition from image_url to tail_image_url.",
                 },
             },
             "required": ["image_url", "prompt"],
