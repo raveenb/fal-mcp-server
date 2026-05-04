@@ -288,6 +288,11 @@ async def test_generate_video_from_image_tool_schema():
     assert "negative_prompt" in props
     assert "cfg_scale" in props
 
+    # Kling first-last-frame transition support
+    assert "tail_image_url" in props
+    assert props["tail_image_url"]["type"] == "string"
+    assert "tail_image_url" not in video_tool.inputSchema["required"]
+
     # Both image_url and prompt are required for image-to-video
     assert "image_url" in video_tool.inputSchema["required"]
     assert "prompt" in video_tool.inputSchema["required"]

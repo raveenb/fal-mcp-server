@@ -132,6 +132,9 @@ async def handle_generate_video_from_image(
         fal_args["negative_prompt"] = arguments["negative_prompt"]
     if "cfg_scale" in arguments:
         fal_args["cfg_scale"] = arguments["cfg_scale"]
+    # Kling first-last-frame transition support (v3/4k, o3, v1.6 pro, v2.x pro)
+    if "tail_image_url" in arguments:
+        fal_args["tail_image_url"] = arguments["tail_image_url"]
 
     # Use queue strategy with timeout protection
     logger.info(
