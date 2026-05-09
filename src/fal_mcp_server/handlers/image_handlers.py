@@ -14,6 +14,54 @@ from mcp.types import TextContent
 from fal_mcp_server.model_registry import ModelRegistry
 from fal_mcp_server.queue.base import QueueStrategy
 
+# Models that require {"width": N, "height": N} instead of a string alias
+_PIXEL_SIZE_MODELS = {
+    "openai/gpt-image-2",
+    "openai/gpt-image-2/edit",
+    "fal-ai/gpt-image-1.5",
+    "fal-ai/gpt-image-1.5/edit",
+}
+
+# Standard string aliases mapped to (w_ratio, h_ratio)
+_ALIAS_RATIOS: Dict[str, tuple] = {
+    "square":         (1, 1),
+    "square_hd":      (1, 1),
+    "landscape_4_3":  (4, 3),
+    "landscape_16_9": (16, 9),
+    "portrait_3_4":   (3, 4),
+    "portrait_9_16":  (9, 16),
+}
+
+
+def _compute_pixel_size(w_ratio: int, h_ratio: int, long_side: int) -> Dict[str, int]:
+    """Return {width, height} from aspect ratio and long-side pixels."""
+    if w_ratio >= h_ratio:
+        return {"width": long_side, "height": round(long_side * h_ratio / w_ratio)}
+    return {"width": round(long_side * w_ratio / h_ratio), "height": long_side}
+
+
+def _resolve_image_size(model_id: str, arguments: Dict[str, Any]) -> Any:
+    """Resolve image size from arguments with priority:
+    1. width + height  → pixel object (always)
+    2. aspect + size_px → compute pixel object from ratio (size_px = long side)
+    3. image_size alias → pixel object for pixel-only models, string otherwise
+    """
+    if "width" in arguments and "height" in arguments:
+        return {"width": arguments["width"], "height": arguments["height"]}
+
+    if "aspect" in arguments:
+        w_ratio, h_ratio = map(int, arguments["aspect"].split(":"))
+        return _compute_pixel_size(w_ratio, h_ratio, arguments.get("size_px", 1024))
+
+    alias = arguments.get("image_size", "landscape_16_9")
+    needs_pixels = any(
+        model_id == m or model_id.startswith(m + "/") for m in _PIXEL_SIZE_MODELS
+    )
+    if needs_pixels:
+        ratios = _ALIAS_RATIOS.get(alias, (4, 3))
+        return _compute_pixel_size(ratios[0], ratios[1], 1024)
+    return alias
+
 
 async def handle_generate_image(
     arguments: Dict[str, Any],
@@ -34,7 +82,7 @@ async def handle_generate_image(
 
     fal_args: Dict[str, Any] = {
         "prompt": arguments["prompt"],
-        "image_size": arguments.get("image_size", "landscape_16_9"),
+        "image_size": _resolve_image_size(model_id, arguments),
         "num_images": arguments.get("num_images", 1),
     }
 
@@ -142,7 +190,7 @@ async def handle_generate_image_structured(
 
     fal_args: Dict[str, Any] = {
         "prompt": json_prompt,
-        "image_size": arguments.get("image_size", "landscape_16_9"),
+        "image_size": _resolve_image_size(model_id, arguments),
         "num_images": arguments.get("num_images", 1),
     }
 

@@ -32,12 +32,31 @@ IMAGE_TOOLS: List[Tool] = [
                     "type": "string",
                     "enum": [
                         "square",
+                        "square_hd",
                         "landscape_4_3",
                         "landscape_16_9",
                         "portrait_3_4",
                         "portrait_9_16",
                     ],
                     "default": "landscape_16_9",
+                    "description": "Size alias (works for most models). For GPT-Image-2 and other OpenAI models, alias is auto-converted to pixels.",
+                },
+                "aspect": {
+                    "type": "string",
+                    "description": "Aspect ratio as 'W:H' (e.g. '3:4', '16:9', '1:1', '9:16'). Use with size_px. Overrides image_size.",
+                },
+                "size_px": {
+                    "type": "integer",
+                    "default": 1024,
+                    "description": "Long side in pixels. Used with aspect to compute exact dimensions.",
+                },
+                "width": {
+                    "type": "integer",
+                    "description": "Exact width in pixels. Use with height for full pixel control. Highest priority.",
+                },
+                "height": {
+                    "type": "integer",
+                    "description": "Exact height in pixels. Use with width for full pixel control. Highest priority.",
                 },
                 "num_images": {
                     "type": "integer",
@@ -173,12 +192,31 @@ IMAGE_TOOLS: List[Tool] = [
                     "type": "string",
                     "enum": [
                         "square",
+                        "square_hd",
                         "landscape_4_3",
                         "landscape_16_9",
                         "portrait_3_4",
                         "portrait_9_16",
                     ],
                     "default": "landscape_16_9",
+                    "description": "Size alias (works for most models). For GPT-Image-2 and other OpenAI models, alias is auto-converted to pixels.",
+                },
+                "aspect": {
+                    "type": "string",
+                    "description": "Aspect ratio as 'W:H' (e.g. '3:4', '16:9', '1:1', '9:16'). Use with size_px. Overrides image_size.",
+                },
+                "size_px": {
+                    "type": "integer",
+                    "default": 1024,
+                    "description": "Long side in pixels. Used with aspect to compute exact dimensions.",
+                },
+                "width": {
+                    "type": "integer",
+                    "description": "Exact width in pixels. Use with height for full pixel control. Highest priority.",
+                },
+                "height": {
+                    "type": "integer",
+                    "description": "Exact height in pixels. Use with width for full pixel control. Highest priority.",
                 },
                 "num_images": {
                     "type": "integer",
