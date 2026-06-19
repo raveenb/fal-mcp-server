@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/luminarylane-fal-mcp-server-badge.png)](https://mseep.ai/app/luminarylane-fal-mcp-server)
+
 # 🎨 Fal.ai MCP Server
 
 [![CI](https://github.com/raveenb/fal-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/raveenb/fal-mcp-server/actions/workflows/ci.yml)
