@@ -6,13 +6,40 @@ Contains: generate_image, generate_image_structured, generate_image_from_image
 
 import asyncio
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from loguru import logger
 from mcp.types import TextContent
 
 from fal_mcp_server.model_registry import ModelRegistry
 from fal_mcp_server.queue.base import QueueStrategy
+
+IMAGE_SIZE_TO_PIXELS: Dict[str, Dict[str, int]] = {
+    "square": {"width": 1024, "height": 1024},
+    "landscape_4_3": {"width": 1024, "height": 768},
+    "landscape_16_9": {"width": 1024, "height": 576},
+    "portrait_3_4": {"width": 768, "height": 1024},
+    "portrait_9_16": {"width": 576, "height": 1024},
+}
+
+PIXEL_ONLY_MODEL_PATTERNS = ("openai/", "gpt-image")
+
+
+def _requires_pixel_size(model_id: str) -> bool:
+    """Check if a model requires pixel-based image_size instead of string aliases."""
+    model_lower = model_id.lower()
+    return any(pattern in model_lower for pattern in PIXEL_ONLY_MODEL_PATTERNS)
+
+
+def resolve_image_size(
+    image_size: str, model_id: str
+) -> Union[str, Dict[str, int]]:
+    """Convert image_size string alias to pixel dict for models that require it."""
+    if not _requires_pixel_size(model_id):
+        return image_size
+    if image_size in IMAGE_SIZE_TO_PIXELS:
+        return IMAGE_SIZE_TO_PIXELS[image_size]
+    return image_size
 
 
 async def handle_generate_image(
@@ -32,9 +59,13 @@ async def handle_generate_image(
             )
         ]
 
+    image_size = resolve_image_size(
+        arguments.get("image_size", "landscape_16_9"), model_id
+    )
+
     fal_args: Dict[str, Any] = {
         "prompt": arguments["prompt"],
-        "image_size": arguments.get("image_size", "landscape_16_9"),
+        "image_size": image_size,
         "num_images": arguments.get("num_images", 1),
     }
 
@@ -140,9 +171,13 @@ async def handle_generate_image_structured(
     # Convert structured prompt to JSON string
     json_prompt = json.dumps(structured_prompt, indent=2)
 
+    image_size = resolve_image_size(
+        arguments.get("image_size", "landscape_16_9"), model_id
+    )
+
     fal_args: Dict[str, Any] = {
         "prompt": json_prompt,
-        "image_size": arguments.get("image_size", "landscape_16_9"),
+        "image_size": image_size,
         "num_images": arguments.get("num_images", 1),
     }
 

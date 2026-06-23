@@ -473,6 +473,48 @@ def test_fal_model_default_values():
     assert model.thumbnail_url is None
 
 
+def test_resolve_image_size_passthrough_for_standard_models():
+    """Test that string aliases pass through unchanged for standard fal models."""
+    from fal_mcp_server.handlers.image_handlers import resolve_image_size
+
+    assert resolve_image_size("portrait_3_4", "fal-ai/flux/schnell") == "portrait_3_4"
+    assert resolve_image_size("landscape_16_9", "fal-ai/fast-sdxl") == "landscape_16_9"
+    assert resolve_image_size("square", "fal-ai/flux-pro") == "square"
+
+
+def test_resolve_image_size_converts_for_openai_models():
+    """Test that string aliases are converted to pixel dicts for OpenAI-based models."""
+    from fal_mcp_server.handlers.image_handlers import resolve_image_size
+
+    result = resolve_image_size("portrait_3_4", "openai/gpt-image-2")
+    assert result == {"width": 768, "height": 1024}
+
+    result = resolve_image_size("landscape_16_9", "openai/gpt-image-2")
+    assert result == {"width": 1024, "height": 576}
+
+    result = resolve_image_size("square", "openai/gpt-image-2/edit")
+    assert result == {"width": 1024, "height": 1024}
+
+
+def test_resolve_image_size_converts_for_gpt_image_models():
+    """Test that fal-hosted GPT image models also get pixel conversion."""
+    from fal_mcp_server.handlers.image_handlers import resolve_image_size
+
+    result = resolve_image_size("portrait_9_16", "fal-ai/gpt-image-1.5")
+    assert result == {"width": 576, "height": 1024}
+
+    result = resolve_image_size("landscape_4_3", "fal-ai/gpt-image-1.5/edit")
+    assert result == {"width": 1024, "height": 768}
+
+
+def test_resolve_image_size_unknown_alias_passes_through():
+    """Test that unrecognized size strings pass through even for pixel-based models."""
+    from fal_mcp_server.handlers.image_handlers import resolve_image_size
+
+    result = resolve_image_size("custom_size", "openai/gpt-image-2")
+    assert result == "custom_size"
+
+
 if __name__ == "__main__":
     tests_passed = 0
     tests_failed = 0
